@@ -1,0 +1,145 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+
+.DS_Store
+Thumbs.db
+
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio
+.idea/
+*.iml
+*.hprof
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.stats.xml
+.idea/**/dictionaries
+.idea/**/libraries
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/.name
+.idea/gradle.xml
+.idea/workspace.xml
+.idea/codeStyles/Project.xml
+.idea/inspectionProfiles/Project_Default.xml
+
+
+*.apk
+*.ap_
+*.dex
+*.class
+*.log
+*.keystore
+*.cxx/
+*.so
+*.o
+*.a
+*.d
+*.s
+*.c
+
+# library
+libs/
+*.jar
+*.aar
+
+# logs
+local.properties
+*.log
+.idea/workspace.xml
+.idea/modules.xml
+*.hprof
+
+# cache Firebase
+firebase-debug.log
+
+# cache Android
+.navigation/
+
+# IntelliJ
+out/
+
+# building
+captures/
+.externalNativeBuild/
+
+# config Android
+*.jks
+/captures
+.externalNativeBuild
+/cxx
+/externalNativeBuild
+
+# NDK and CMake
+.cxx/
+.externalNativeBuild/
+
+# JetBrains and Android Studio settings
+.idea/
+*.iws
+.idea/libraries
+.idea/tasks.xml
+.idea/workspace.xml
+.idea/caches
+.idea/modules.xml
+.idea/gradle.xml
+.idea/.name
+
+# Android Profiling
+*.hprof
+
+# localization
+*.r
+*.kotlin_metadata
+
+# tests
+test-results/
+test-output/
+tests/
+
+# config in OS
+*.psd
+*.pdm
+*.iml
+
+# fonts
+generatedJava/
+assets/
+fonts/
+
+# Images from Android Studio Emulator
+**/emu-cache/
+**/snapshot/
+
+# Android Studio
+.cache/
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/
+.flutter_tool/
+
+# Android NDK
+/obj/
+
