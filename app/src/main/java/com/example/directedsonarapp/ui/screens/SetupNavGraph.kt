@@ -7,9 +7,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun SetupNavGraph(navController: NavHostController, paddingValues: PaddingValues) {
+
+    val context = LocalContext.current
+
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
@@ -19,7 +23,7 @@ fun SetupNavGraph(navController: NavHostController, paddingValues: PaddingValues
             HomeScreen(navController)
         }
         composable(Screen.History.route) {
-            HistoryScreen(navController)
+            HistoryScreen(context)
         }
         composable(Screen.Graph.route) {
             GraphScreen(navController)
@@ -29,3 +33,4 @@ fun SetupNavGraph(navController: NavHostController, paddingValues: PaddingValues
         }
     }
 }
+
