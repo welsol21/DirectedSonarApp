@@ -14,6 +14,7 @@ import com.example.directedsonarapp.ui.screens.SetupNavGraph
 import com.example.directedsonarapp.ui.theme.DirectedSonarAppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,10 +35,31 @@ class MainActivity : ComponentActivity() {
         val dao = db.measurementDao()
 
         lifecycleScope.launch(Dispatchers.IO) {
-            dao.insert(Measurement(distance = 1.5, timestamp = System.currentTimeMillis(), note = "Test Note 1"))
-            dao.insert(Measurement(distance = 0.9, timestamp = System.currentTimeMillis(), note = "Test Note 2"))
+            repeat(10) {
+                val randomDistance = Random.nextDouble(0.9, 1.5)
+                val randomTimestamp = System.currentTimeMillis() - (0..10_000_000L).random()
+                val randomNote = "Test Note ${it + 1}"
+
+                dao.insert(
+                    Measurement(
+                        distance = randomDistance,
+                        timestamp = randomTimestamp,
+                        note = randomNote
+                    )
+                )
+            }
         }
     }
+
+//    private fun populateDatabase() {
+//        val db = DatabaseProvider.getDatabase(this)
+//        val dao = db.measurementDao()
+//
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            dao.insert(Measurement(distance = 1.5, timestamp = System.currentTimeMillis(), note = "Test Note 1"))
+//            dao.insert(Measurement(distance = 0.9, timestamp = System.currentTimeMillis(), note = "Test Note 2"))
+//        }
+//    }
 }
 
 @Composable
