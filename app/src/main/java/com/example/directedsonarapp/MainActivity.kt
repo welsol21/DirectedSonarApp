@@ -1,8 +1,11 @@
 package com.example.directedsonarapp
 
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.lifecycleScope
@@ -17,8 +20,21 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission granted
+                Toast.makeText(this, "Audio recording permission granted", Toast.LENGTH_SHORT).show()
+            } else {
+                // Permission denied
+                Toast.makeText(this, "Permission for recording audio denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        checkAndRequestPermissions()
 
         // Initialize the database and populate with test data
         populateDatabase()
@@ -51,26 +67,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    private fun populateDatabase() {
-//        val db = DatabaseProvider.getDatabase(this)
-//        val dao = db.measurementDao()
-//
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            dao.insert(Measurement(distance = 1.5, timestamp = System.currentTimeMillis(), note = "Test Note 1"))
-//            dao.insert(Measurement(distance = 0.9, timestamp = System.currentTimeMillis(), note = "Test Note 2"))
-//        }
-//    }
-}
+    @Composable
+    fun MainScreen() {
+        val navController = rememberNavController()
 
-@Composable
-fun MainScreen() {
-    val navController = rememberNavController()
-
-    Scaffold(
-        bottomBar = {
-            BottomNavigationBar(navController)
+        Scaffold(
+            bottomBar = {
+                BottomNavigationBar(navController)
+            }
+        ) { paddingValues ->
+            SetupNavGraph(navController = navController, paddingValues = paddingValues)
         }
-    ) { paddingValues ->
-        SetupNavGraph(navController = navController, paddingValues = paddingValues)
+    }
+
+    private fun checkAndRequestPermissions() {
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+        }
     }
 }
