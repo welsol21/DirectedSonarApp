@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
         checkAndRequestPermissions()
 
         // Initialize the database and populate with test data
-        populateDatabase()
+//        populateDatabase()
 
         setContent {
             DirectedSonarAppTheme {
@@ -46,26 +46,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun populateDatabase() {
-        val db = DatabaseProvider.getDatabase(this)
-        val dao = db.measurementDao()
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            repeat(10) {
-                val randomDistance = Random.nextDouble(0.9, 1.5)
-                val randomTimestamp = System.currentTimeMillis() - (0..10_000_000L).random()
-                val randomNote = "Test Note ${it + 1}"
-
-                dao.insert(
-                    Measurement(
-                        distance = randomDistance,
-                        timestamp = randomTimestamp,
-                        note = randomNote
-                    )
-                )
-            }
-        }
-    }
+//    private fun populateDatabase() {
+//        val db = DatabaseProvider.getDatabase(this)
+//        val dao = db.measurementDao()
+//
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            repeat(10) {
+//                val randomDistance = Random.nextDouble(0.9, 1.5)
+//                val randomTimestamp = System.currentTimeMillis() - (0..10_000_000L).random()
+//                val randomNote = "Test Note ${it + 1}"
+//
+//                dao.insert(
+//                    Measurement(
+//                        distance = randomDistance,
+//                        timestamp = randomTimestamp,
+//                        note = randomNote
+//                    )
+//                )
+//            }
+//        }
+//    }
 
     @Composable
     fun MainScreen() {

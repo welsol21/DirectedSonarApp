@@ -102,7 +102,7 @@ fun HomeScreen(navController: NavController) {
                 Button(
                     onClick = {
                         isMeasuring = true
-                        viewModel.startMeasurement(note) { success, message ->
+                        viewModel.startMeasurement(context, note) { success, message ->
                             isMeasuring = false
                             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                         }

@@ -1,10 +1,13 @@
 package com.example.directedsonarapp.viewmodel
 
-import android.annotation.SuppressLint
+import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -12,21 +15,21 @@ import com.example.directedsonarapp.data.database.Measurement
 import com.example.directedsonarapp.data.database.MeasurementDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
 
-    fun startMeasurement(note: String, onComplete: (Boolean, String) -> Unit) {
+    fun startMeasurement(context: Context, note: String, onComplete: (Boolean, String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val distance = measureDistance()
+                // Передаём context в measureDistance
+                val distance = measureDistance(context)
                 val timestamp = System.currentTimeMillis()
 
                 val measurement = Measurement(distance = distance, timestamp = timestamp, note = note)
                 dao.insert(measurement)
 
                 launch(Dispatchers.Main) {
-                    onComplete(true, "Measurement saved successfully!")
+                    onComplete(true, "Measurement saved successfully! Distance: ${"%.2f".format(distance)} m")
                 }
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {
@@ -36,48 +39,48 @@ class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
         }
     }
 
-
-    private fun measureDistance(): Double {
+    private fun measureDistance(context: Context): Double {
         val sampleRate = 44100
-        val duration = 1
-        val frequency = 20000.0
+        val duration = 5
+        val frequency = 8000.0
 
         val buffer = ShortArray(sampleRate * duration)
         for (i in buffer.indices) {
             buffer[i] = (Short.MAX_VALUE * kotlin.math.sin(2 * Math.PI * frequency * i / sampleRate)).toInt().toShort()
         }
 
-        val audioTrack = AudioTrack(
-            AudioTrack.MODE_STATIC,
-            sampleRate,
-            AudioFormat.CHANNEL_OUT_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            buffer.size * 2,
-            AudioTrack.MODE_STATIC
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager.setStreamVolume(
+            AudioManager.STREAM_MUSIC,
+            audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+            0
         )
+
+        val audioTrack = AudioTrack(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build(),
+            AudioFormat.Builder()
+                .setSampleRate(sampleRate)
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                .build(),
+            buffer.size * 2,
+            AudioTrack.MODE_STATIC,
+            AudioManager.AUDIO_SESSION_ID_GENERATE
+        )
+
+        audioTrack.setVolume(AudioTrack.getMaxVolume())
         audioTrack.write(buffer, 0, buffer.size)
         audioTrack.play()
 
-        val audioRecord = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            buffer.size * 2
-        )
-        val recordedBuffer = ShortArray(buffer.size)
-        audioRecord.startRecording()
-        audioRecord.read(recordedBuffer, 0, recordedBuffer.size)
-        audioRecord.stop()
-        audioRecord.release()
+        Thread.sleep(duration * 1000L)
 
         audioTrack.stop()
         audioTrack.release()
 
-        val delayInSamples = findDelay(buffer, recordedBuffer)
-        val delayInSeconds = delayInSamples / sampleRate.toDouble()
-
-        return (delayInSeconds * 343) / 2
+        return 0.0
     }
 
     private fun findDelay(transmitted: ShortArray, recorded: ShortArray): Int {
@@ -94,6 +97,40 @@ class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
             }
         }
         return 0
+    }
+
+    fun playTestTone(context: Context) {
+        val sampleRate = 44100
+        val frequency = 1000.0
+        val duration = 2
+
+        val buffer = ShortArray(sampleRate * duration)
+        for (i in buffer.indices) {
+            buffer[i] = (Short.MAX_VALUE * kotlin.math.sin(2 * Math.PI * frequency * i / sampleRate)).toInt().toShort()
+        }
+
+        val audioTrack = AudioTrack(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build(),
+            AudioFormat.Builder()
+                .setSampleRate(sampleRate)
+                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                .build(),
+            buffer.size * 2,
+            AudioTrack.MODE_STATIC,
+            AudioManager.AUDIO_SESSION_ID_GENERATE
+        )
+
+        audioTrack.setVolume(AudioTrack.getMaxVolume())
+        audioTrack.write(buffer, 0, buffer.size)
+        audioTrack.play()
+
+        Thread.sleep(2000) // Play for 2 seconds
+        audioTrack.stop()
+        audioTrack.release()
     }
 }
 
