@@ -26,7 +26,6 @@ fun GraphScreen(navController: NavController) {
     val dao = db.measurementDao()
     val viewModel: GraphViewModel = viewModel(factory = GraphViewModelFactory(dao))
 
-    // Используем observeAsState для LiveData
     val measurements by viewModel.measurements.observeAsState(emptyList())
 
     val entries = measurements.mapIndexed { index, measurement ->
@@ -51,9 +50,9 @@ fun GraphScreen(navController: NavController) {
                 }
 
                 chart.data = LineData(dataSet)
-                chart.invalidate() // Обновление графика
+                chart.invalidate()
             } else {
-                chart.clear() // Очищаем график, если данных нет
+                chart.clear()
                 chart.setNoDataText("No data available")
             }
         }

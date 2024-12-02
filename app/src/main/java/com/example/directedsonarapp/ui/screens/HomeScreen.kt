@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -24,6 +25,7 @@ import com.example.directedsonarapp.viewmodel.HomeViewModel
 import com.example.directedsonarapp.viewmodel.HomeViewModelFactory
 import com.example.directedsonarapp.data.database.DatabaseProvider
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
@@ -35,6 +37,7 @@ fun HomeScreen(navController: NavController) {
 
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
 
     // Request microphone permission
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -45,6 +48,7 @@ fun HomeScreen(navController: NavController) {
             }
         }
     )
+
     LaunchedEffect(Unit) {
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -53,14 +57,12 @@ fun HomeScreen(navController: NavController) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            Spacer(modifier = Modifier.height(56.dp)) // Учитываем высоту нижней панели
-        }
+        bottomBar = { Spacer(modifier = Modifier.height(56.dp)) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // Учет внутренних отступов от Scaffold
+                .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
@@ -83,6 +85,20 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
+                if (message.isNotEmpty()) {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.body1.copy(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colors.primary
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
                 // Input field for note
                 OutlinedTextField(
                     value = note,
@@ -98,24 +114,28 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Start measurement button
+                // Start measurement button with rounded corners, dark purple background, and contrasting text
                 Button(
                     onClick = {
                         isMeasuring = true
-                        viewModel.startMeasurement(context, note) { success, message ->
+                        viewModel.startMeasurement(context, note) { success, messageText ->
                             isMeasuring = false
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                            message = messageText
+                            Toast.makeText(context, messageText, Toast.LENGTH_LONG).show()
                         }
                     },
                     enabled = !isMeasuring,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
+                        .fillMaxWidth(0.65f)  // 65% width (15% wider than 50%)
+                        .height(56.dp)  // Make it taller for a more circular appearance
+                        .clip(RoundedCornerShape(30.dp))  // Round the corners more for circular look
+                        .padding(8.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF6200EE)) // Dark purple background
                 ) {
                     Text(
                         text = if (isMeasuring) "Measuring..." else "Start Measurement",
-                        style = MaterialTheme.typography.button,
-                        color = Color.White
+                        style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold),
+                        color = Color.White // Make text white for contrast
                     )
                 }
 
@@ -145,4 +165,3 @@ fun HomeScreen(navController: NavController) {
         }
     }
 }
-

@@ -34,16 +34,12 @@ class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
                 val measurement = Measurement(distance = distance, timestamp = timestamp, note = note)
                 dao.insert(measurement)
 
-                // Переключаемся на главный поток для отображения Toast
                 launch(Dispatchers.Main) {
-                    Toast.makeText(context, "Measurement saved successfully! Distance: ${"%.2f".format(distance)} m", Toast.LENGTH_LONG).show()
-                    onComplete(true, "Measurement saved successfully! Distance: ${"%.2f".format(distance)} m")
+                    onComplete(true, "Measurement saved successfully!\nDistance: ${"%.2f".format(distance)} m")
                 }
             } catch (e: Exception) {
-                // Обрабатываем ошибки в главном потоке
                 launch(Dispatchers.Main) {
                     Log.e("AudioDebug", "Failed to save measurement: ${e.message}", e)
-                    Toast.makeText(context, "Failed to save measurement: ${e.message}", Toast.LENGTH_LONG).show()
                     onComplete(false, "Failed to save measurement: ${e.message}")
                 }
             }
