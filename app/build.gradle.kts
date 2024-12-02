@@ -19,6 +19,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        renderscriptTargetApi = 21
+        renderscriptSupportModeEnabled = true
     }
 
     buildTypes {
@@ -51,6 +54,16 @@ android {
 }
 
 dependencies {
+
+    // For low-level audio (AudioRecord)
+    implementation("androidx.media3:media3-common:1.5.0")
+    // For real-time audio processing and streaming (if necessary)
+    implementation("com.github.tony19:logback-android:2.0.0")
+
+    // multimedia dependencies
+    implementation("androidx.media3:media3-exoplayer:1.5.0")
+    implementation("androidx.media3:media3-ui:1.5.0")
+
     // Room dependencies
     implementation("androidx.room:room-runtime:2.6.1")
     implementation(libs.androidx.media3.common.ktx)
