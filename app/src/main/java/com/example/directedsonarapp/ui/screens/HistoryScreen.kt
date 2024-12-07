@@ -25,6 +25,83 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
+fun SortableHeader(
+    text: String,
+    field: String,
+    currentSortField: String,
+    ascending: Boolean,
+    onSortChange: (String, Boolean) -> Unit
+) {
+    val width = when (field) {
+        "datetime" -> 140.dp
+        else -> 100.dp
+    }
+
+    Button(
+        onClick = {
+            if (currentSortField == field) {
+                onSortChange(field, !ascending)
+            } else {
+                onSortChange(field, true)
+            }
+        },
+        modifier = Modifier
+            .width(width)
+            .padding(horizontal = 4.dp),
+        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)
+    ) {
+        Text(
+            text = text + if (currentSortField == field) {
+                if (ascending) " ↑" else " ↓"
+            } else "",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.subtitle1
+        )
+    }
+}
+
+@SuppressLint("SimpleDateFormat")
+@Composable
+fun MeasurementRow(
+    measurement: Measurement,
+    onUpdateNote: (String) -> Unit
+) {
+    val dateTime = Date(measurement.timestamp)
+    val datetimeFormat = SimpleDateFormat("dd.MM.yy HH:mm:ss")
+
+    var note by remember { mutableStateOf(TextFieldValue(measurement.note ?: "")) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "%.2f".format(measurement.distance),
+            modifier = Modifier.width(100.dp).padding(horizontal = 4.dp), // Фиксированная ширина
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = datetimeFormat.format(dateTime),
+            modifier = Modifier.width(140.dp).padding(horizontal = 4.dp), // Фиксированная ширина
+            textAlign = TextAlign.Center
+        )
+        TextField(
+            value = note,
+            onValueChange = { newValue ->
+                note = newValue
+                onUpdateNote(newValue.text)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            textStyle = TextStyle(fontSize = 14.sp)
+        )
+    }
+}
+
+@Composable
 fun HistoryScreen(context: android.content.Context) {
     val db = DatabaseProvider.getDatabase(context)
     val dao = db.measurementDao()
@@ -33,8 +110,19 @@ fun HistoryScreen(context: android.content.Context) {
     val measurements by viewModel.measurements.observeAsState(emptyList())
     val itemsPerPage = 10
     var currentPage by remember { mutableStateOf(0) }
+    var sortField by remember { mutableStateOf("distance") }
+    var ascending by remember { mutableStateOf(true) }
 
-    val paginatedMeasurements = measurements.chunked(itemsPerPage)
+    val sortedMeasurements = remember(measurements, sortField, ascending) {
+        when (sortField) {
+            "distance" -> if (ascending) measurements.sortedBy { it.distance } else measurements.sortedByDescending { it.distance }
+            "datetime" -> if (ascending) measurements.sortedBy { it.timestamp } else measurements.sortedByDescending { it.timestamp }
+            "note" -> if (ascending) measurements.sortedBy { it.note } else measurements.sortedByDescending { it.note }
+            else -> measurements
+        }
+    }
+
+    val paginatedMeasurements = sortedMeasurements.chunked(itemsPerPage)
 
     Column(
         modifier = Modifier
@@ -42,26 +130,36 @@ fun HistoryScreen(context: android.content.Context) {
             .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Table header
+        // Table header with sorting
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "Distance (m)", style = MaterialTheme.typography.subtitle1, modifier = Modifier.weight(1f))
-            Text(text = "Date", style = MaterialTheme.typography.subtitle1, modifier = Modifier.weight(1f))
-            Text(text = "Time", style = MaterialTheme.typography.subtitle1, modifier = Modifier.weight(1f))
-            Text(text = "Note", style = MaterialTheme.typography.subtitle1, modifier = Modifier.weight(2f))
+            SortableHeader("Distance (m)", "distance", sortField, ascending) { field, asc ->
+                sortField = field
+                ascending = asc
+            }
+            SortableHeader("Datetime", "datetime", sortField, ascending) { field, asc ->
+                sortField = field
+                ascending = asc
+            }
+            SortableHeader("Note", "note", sortField, ascending) { field, asc ->
+                sortField = field
+                ascending = asc
+            }
         }
 
         // LazyColumn for paginated data
         LazyColumn(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .fillMaxHeight(0.8f)
+                .padding(vertical = 8.dp)
         ) {
             val currentItems = paginatedMeasurements.getOrNull(currentPage) ?: emptyList()
 
-            itemsIndexed(currentItems) { index, measurement ->
+            itemsIndexed(currentItems) { _, measurement ->
                 MeasurementRow(
                     measurement = measurement,
                     onUpdateNote = { newNote ->
@@ -82,7 +180,7 @@ fun HistoryScreen(context: android.content.Context) {
             Button(
                 onClick = { if (currentPage > 0) currentPage-- },
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3700B3), // Same as Start button
+                    backgroundColor = Color(0xFF3700B3),
                     contentColor = Color.White
                 ),
                 enabled = currentPage > 0
@@ -97,7 +195,7 @@ fun HistoryScreen(context: android.content.Context) {
             Button(
                 onClick = { if (currentPage < paginatedMeasurements.size - 1) currentPage++ },
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3700B3), // Same as Start button
+                    backgroundColor = Color(0xFF3700B3),
                     contentColor = Color.White
                 ),
                 enabled = currentPage < paginatedMeasurements.size - 1
@@ -105,50 +203,5 @@ fun HistoryScreen(context: android.content.Context) {
                 Text("Next")
             }
         }
-    }
-}
-
-@SuppressLint("SimpleDateFormat")
-@Composable
-fun MeasurementRow(
-    measurement: Measurement,
-    onUpdateNote: (String) -> Unit
-) {
-    val dateTime = Date(measurement.timestamp)
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd")
-    val timeFormat = SimpleDateFormat("HH:mm:ss")
-
-    var note by remember { mutableStateOf(TextFieldValue(measurement.note ?: "")) }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "%.2f".format(measurement.distance),
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = dateFormat.format(dateTime),
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = timeFormat.format(dateTime),
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Center
-        )
-        TextField(
-            value = note,
-            onValueChange = { newValue ->
-                note = newValue
-                onUpdateNote(newValue.text)
-            },
-            modifier = Modifier.weight(2f),
-            textStyle = TextStyle(fontSize = 14.sp)
-        )
     }
 }
