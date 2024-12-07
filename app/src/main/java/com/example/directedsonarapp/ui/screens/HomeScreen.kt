@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -75,124 +76,132 @@ fun HomeScreen(navController: NavController) {
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
-        Column(
+        // Wrapping content in LazyColumn for scrolling
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // App Title
-            Text(
-                text = "Directed Sonar App",
-                style = MaterialTheme.typography.h4.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
-                    color = MaterialTheme.colors.primary
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
-
-            // Reserved space for message
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp), // Reserve fixed height for the message
-                contentAlignment = Alignment.Center
-            ) {
-                if (showMessage) {
-                    AnimatedMessage(
-                        message = messageText,
-                        visible = showMessage,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Input field for note
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Enter note (optional)") },
-                    placeholder = { Text("E.g., Living room") },
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
+            item {
+                // App Title
+                Text(
+                    text = "Directed Sonar App",
+                    style = MaterialTheme.typography.h4.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp,
+                        color = MaterialTheme.colors.primary
+                    ),
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
+                        .padding(vertical = 16.dp)
                 )
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Start measurement button
-                AnimatedButton(
-                    onClick = {
-                        isMeasuring = true
-                        progress = 3 // Начальное значение прогресса
-
-                        viewModel.startMeasurement(
-                            context = context,
-                            note = note,
-                            duration = 3,
-                            onProgressUpdate = { remainingTime ->
-                                progress = remainingTime
-                            },
-                            onComplete = { success, message ->
-                                isMeasuring = false
-                                messageText = message
-                                showMessage = true
-                                scope.launch {
-                                    kotlinx.coroutines.delay(3000)
-                                    showMessage = false
-                                }
-                            }
-                        )
-                    },
-                    enabled = !isMeasuring,
-                    text = if (isMeasuring) "Measuring..." else "Start Measurement",
-                    modifier = Modifier
-                        .fillMaxWidth(0.65f)
-                        .height(56.dp)
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Reserved space for progress bar
+            item {
+                // Reserved space for message
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp), // Reserve fixed height for the progress bar
+                        .height(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isMeasuring) {
-                        CircularCountdownTimer(
-                            durationInSeconds = 3,
-                            remainingTime = progress
+                    if (showMessage) {
+                        AnimatedMessage(
+                            message = messageText,
+                            visible = showMessage,
+                            modifier = Modifier.align(Alignment.Center)
                         )
                     }
                 }
             }
 
-            // Footer text
-            Text(
-                text = "Measure distances with sound waves",
-                style = MaterialTheme.typography.body2.copy(
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Input field for note
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text("Enter note (optional)") },
+                        placeholder = { Text("E.g., Living room") },
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Start measurement button
+                    AnimatedButton(
+                        onClick = {
+                            isMeasuring = true
+                            progress = 3 // Начальное значение прогресса
+
+                            viewModel.startMeasurement(
+                                context = context,
+                                note = note,
+                                duration = 3,
+                                onProgressUpdate = { remainingTime ->
+                                    progress = remainingTime
+                                },
+                                onComplete = { success, message ->
+                                    isMeasuring = false
+                                    messageText = message
+                                    showMessage = true
+                                    scope.launch {
+                                        kotlinx.coroutines.delay(3000)
+                                        showMessage = false
+                                    }
+                                }
+                            )
+                        },
+                        enabled = !isMeasuring,
+                        text = if (isMeasuring) "Measuring..." else "Start Measurement",
+                        modifier = Modifier
+                            .fillMaxWidth(0.65f)
+                            .height(56.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Reserved space for progress bar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isMeasuring) {
+                            CircularCountdownTimer(
+                                durationInSeconds = 3,
+                                remainingTime = progress
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                // Footer text
+                Text(
+                    text = "Measure distances with sound waves",
+                    style = MaterialTheme.typography.body2.copy(
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }
