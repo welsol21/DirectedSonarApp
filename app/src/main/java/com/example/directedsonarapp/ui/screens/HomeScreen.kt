@@ -27,6 +27,7 @@ import com.example.directedsonarapp.data.database.DatabaseProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -37,14 +38,17 @@ fun HomeScreen(navController: NavController) {
 
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // Request microphone permission
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (!isGranted) {
-                Toast.makeText(context, "Microphone permission is required", Toast.LENGTH_SHORT).show()
+                scope.launch {
+                    snackbarHostState.showSnackbar("Microphone permission is required")
+                }
             }
         }
     )
@@ -67,38 +71,34 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // App Title
-            Text(
-                text = "Directed Sonar App",
-                style = MaterialTheme.typography.h4.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
-                    color = MaterialTheme.colors.primary
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
+            // App Title and SnackbarHost
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Directed Sonar App",
+                    style = MaterialTheme.typography.h4.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp,
+                        color = MaterialTheme.colors.primary
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                )
+
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                if (message.isNotEmpty()) {
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.body1.copy(
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colors.primary
-                        ),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
-
                 // Input field for note
                 OutlinedTextField(
                     value = note,
@@ -114,28 +114,29 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Start measurement button with rounded corners, dark purple background, and contrasting text
+                // Start measurement button
                 Button(
                     onClick = {
                         isMeasuring = true
                         viewModel.startMeasurement(context, note) { success, messageText ->
                             isMeasuring = false
-                            message = messageText
-                            Toast.makeText(context, messageText, Toast.LENGTH_LONG).show()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(messageText)
+                            }
                         }
                     },
                     enabled = !isMeasuring,
                     modifier = Modifier
-                        .fillMaxWidth(0.65f)  // 65% width (15% wider than 50%)
-                        .height(56.dp)  // Make it taller for a more circular appearance
-                        .clip(RoundedCornerShape(30.dp))  // Round the corners more for circular look
+                        .fillMaxWidth(0.65f)
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(30.dp))
                         .padding(8.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF6200EE)) // Dark purple background
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF6200EE))
                 ) {
                     Text(
                         text = if (isMeasuring) "Measuring..." else "Start Measurement",
                         style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold),
-                        color = Color.White // Make text white for contrast
+                        color = Color.White
                     )
                 }
 
