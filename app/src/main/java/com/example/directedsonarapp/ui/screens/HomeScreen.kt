@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import com.example.directedsonarapp.viewmodel.HomeViewModel
 import com.example.directedsonarapp.viewmodel.HomeViewModelFactory
 import com.example.directedsonarapp.data.database.DatabaseProvider
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +44,8 @@ fun HomeScreen(navController: NavController) {
 
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
+    var messageText by remember { mutableStateOf("") }
+    var showMessage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -65,7 +69,10 @@ fun HomeScreen(navController: NavController) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = { Spacer(modifier = Modifier.height(56.dp)) }
+        bottomBar = { Spacer(modifier = Modifier.height(56.dp)) },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -75,29 +82,26 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // App Title and SnackbarHost
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Directed Sonar App",
-                    style = MaterialTheme.typography.h4.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = MaterialTheme.colors.primary
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                )
+            // App Title
+            Text(
+                text = "Directed Sonar App",
+                style = MaterialTheme.typography.h4.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp,
+                    color = MaterialTheme.colors.primary
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            )
 
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
+            // Animated Message
+            AnimatedMessage(
+                message = messageText,
+                visible = showMessage,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -119,48 +123,25 @@ fun HomeScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Start measurement button
-//                Button(
-//                    onClick = {
-//                        isMeasuring = true
-//                        viewModel.startMeasurement(context, note) { success, messageText ->
-//                            isMeasuring = false
-//                            scope.launch {
-//                                snackbarHostState.showSnackbar(messageText)
-//                            }
-//                        }
-//                    },
-//                    enabled = !isMeasuring,
-//                    modifier = Modifier
-//                        .fillMaxWidth(0.65f)
-//                        .height(56.dp)
-//                        .clip(RoundedCornerShape(30.dp))
-//                        .padding(8.dp),
-//                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF6200EE))
-//                ) {
-//                    Text(
-//                        text = if (isMeasuring) "Measuring..." else "Start Measurement",
-//                        style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold),
-//                        color = Color.White
-//                    )
-//                }
-
                 AnimatedButton(
                     onClick = {
                         isMeasuring = true
-                        viewModel.startMeasurement(context, note) { success, messageText ->
+                        viewModel.startMeasurement(context, note) { success, message ->
                             isMeasuring = false
+                            messageText = message
+                            showMessage = true
                             scope.launch {
-                                snackbarHostState.showSnackbar(messageText)
+                                kotlinx.coroutines.delay(3000)
+                                showMessage = false
                             }
                         }
                     },
+                    enabled = !isMeasuring,
+                    text = if (isMeasuring) "Measuring..." else "Start Measurement",
                     modifier = Modifier
                         .fillMaxWidth(0.65f)
-                        .height(56.dp),
-                    enabled = !isMeasuring,
-                    text = if (isMeasuring) "Measuring..." else "Start Measurement"
+                        .height(56.dp)
                 )
-
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -201,17 +182,16 @@ fun AnimatedButton(
         animationSpec = tween(durationMillis = 300)
     )
 
-    // Кнопка с анимацией
     Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
             .scale(scale),
         colors = ButtonDefaults.buttonColors(
-            backgroundColor = if (enabled) Color(0xFF3700B3) else Color(0xFF6200EE), // Более темный фон
-            contentColor = Color.White // Белый текст для контраста
+            backgroundColor = if (enabled) Color(0xFF3700B3) else Color(0xFF6200EE),
+            contentColor = Color.White
         ),
-        shape = RoundedCornerShape(30.dp) // Оставляем скругленные углы
+        shape = RoundedCornerShape(30.dp)
     ) {
         Text(
             text = text,
@@ -219,3 +199,43 @@ fun AnimatedButton(
         )
     }
 }
+
+@Composable
+fun AnimatedMessage(
+    message: String,
+    modifier: Modifier = Modifier,
+    visible: Boolean
+) {
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 300)
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.8f,
+        animationSpec = tween(durationMillis = 300)
+    )
+
+    if (visible) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = modifier
+                .scale(scale)
+                .alpha(alpha)
+                .padding(8.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFF3700B3))
+                .padding(16.dp)
+        ) {
+            Text(
+                text = message,
+                color = Color.White,
+                style = MaterialTheme.typography.body1.copy(
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            )
+        }
+    }
+}
+
