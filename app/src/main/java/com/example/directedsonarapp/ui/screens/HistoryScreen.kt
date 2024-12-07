@@ -6,15 +6,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.directedsonarapp.data.database.DatabaseProvider
 import com.example.directedsonarapp.data.database.Measurement
@@ -29,8 +28,7 @@ fun HistoryScreen(context: android.content.Context) {
     val dao = db.measurementDao()
     val viewModel: HistoryViewModel = viewModel(factory = HistoryViewModelFactory(dao))
 
-    // Исправление для observeAsState
-    val measurements = viewModel.measurements.observeAsState(initial = emptyList()).value
+    val measurements by viewModel.measurements.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val itemsPerPage = 10
     var currentPage by remember { mutableStateOf(0) }
@@ -49,12 +47,9 @@ fun HistoryScreen(context: android.content.Context) {
     val paginatedMeasurements = sortedMeasurements.chunked(itemsPerPage)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Заголовки
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -73,40 +68,27 @@ fun HistoryScreen(context: android.content.Context) {
             }
         }
 
-        // Таблица
         LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .padding(top = 8.dp)
+            modifier = Modifier.weight(1f).padding(top = 8.dp)
         ) {
             val currentItems = paginatedMeasurements.getOrNull(currentPage) ?: emptyList()
             itemsIndexed(currentItems) { _, measurement ->
                 MeasurementRow(
                     measurement = measurement,
-                    onUpdateNote = { newNote ->
-                        viewModel.updateMeasurementNote(measurement, newNote)
-                    }
+                    onUpdateNote = { newNote -> viewModel.updateMeasurementNote(measurement, newNote) }
                 )
                 Divider()
             }
         }
 
-        // Пагинация
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Button(
-                onClick = { if (currentPage > 0) currentPage-- },
-                enabled = currentPage > 0
-            ) {
+            Button(onClick = { if (currentPage > 0) currentPage-- }, enabled = currentPage > 0) {
                 Text("Previous")
             }
-            Text(
-                text = "Page ${currentPage + 1} of ${paginatedMeasurements.size}",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                style = TextStyle(fontSize = 14.sp)
-            )
+            Text("Page ${currentPage + 1} of ${paginatedMeasurements.size}")
             Button(
                 onClick = { if (currentPage < paginatedMeasurements.size - 1) currentPage++ },
                 enabled = currentPage < paginatedMeasurements.size - 1
@@ -126,8 +108,6 @@ fun MeasurementRow(
     val dateTime = Date(measurement.timestamp)
     val datetimeFormat = SimpleDateFormat("dd.MM.yy HH:mm:ss")
 
-    var note by remember { mutableStateOf(TextFieldValue(measurement.note ?: "")) }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -136,19 +116,22 @@ fun MeasurementRow(
     ) {
         Text(
             text = "%.2f".format(measurement.distance),
-            modifier = Modifier.width(100.dp).padding(horizontal = 4.dp),
+            modifier = Modifier
+                .width(100.dp)
+                .padding(horizontal = 4.dp),
             textAlign = TextAlign.Center
         )
         Text(
             text = datetimeFormat.format(dateTime),
-            modifier = Modifier.width(140.dp).padding(horizontal = 4.dp),
+            modifier = Modifier
+                .width(140.dp)
+                .padding(horizontal = 4.dp),
             textAlign = TextAlign.Center
         )
         TextField(
-            value = note,
-            onValueChange = { newValue ->
-                note = newValue
-                onUpdateNote(newValue.text)
+            value = measurement.note ?: "",
+            onValueChange = { newNote ->
+                onUpdateNote(newNote)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,6 +140,7 @@ fun MeasurementRow(
         )
     }
 }
+
 
 @Composable
 fun SortableHeader(
