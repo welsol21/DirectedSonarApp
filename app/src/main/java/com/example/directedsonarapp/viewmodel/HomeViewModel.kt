@@ -24,9 +24,24 @@ import kotlin.math.sin
 
 class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
 
-    fun startMeasurement(context: Context, note: String, onComplete: (Boolean, String) -> Unit) {
+    fun startMeasurement(
+        context: Context,
+        note: String,
+        duration: Int, // Длительность сигнала
+        onProgressUpdate: (Int) -> Unit, // Для обновления прогресса
+        onComplete: (Boolean, String) -> Unit
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                // Обратный отсчет времени
+                repeat(duration) { elapsed ->
+                    onProgressUpdate(duration - elapsed) // Обновляем оставшееся время
+                    kotlinx.coroutines.delay(1000) // Ждем 1 секунду
+                }
+
+                onProgressUpdate(0) // Прогресс завершен
+
+                // Запускаем процесс измерения
                 val distance = measureDistance(context)
                 Log.d("AudioDebug", "Calculated distance: $distance")
                 val timestamp = System.currentTimeMillis()

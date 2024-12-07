@@ -48,6 +48,7 @@ fun HomeScreen(navController: NavController) {
     var showMessage by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var progress by remember { mutableStateOf(0) }
 
     // Request microphone permission
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -126,15 +127,25 @@ fun HomeScreen(navController: NavController) {
                 AnimatedButton(
                     onClick = {
                         isMeasuring = true
-                        viewModel.startMeasurement(context, note) { success, message ->
-                            isMeasuring = false
-                            messageText = message
-                            showMessage = true
-                            scope.launch {
-                                kotlinx.coroutines.delay(3000)
-                                showMessage = false
+                        progress = 3 // Начальное значение прогресса (длительность сигнала)
+
+                        viewModel.startMeasurement(
+                            context = context,
+                            note = note,
+                            duration = 3, // Передаем длительность сигнала
+                            onProgressUpdate = { remainingTime ->
+                                progress = remainingTime // Обновляем прогресс
+                            },
+                            onComplete = { success, message ->
+                                isMeasuring = false
+                                messageText = message
+                                showMessage = true
+                                scope.launch {
+                                    kotlinx.coroutines.delay(3000)
+                                    showMessage = false
+                                }
                             }
-                        }
+                        )
                     },
                     enabled = !isMeasuring,
                     text = if (isMeasuring) "Measuring..." else "Start Measurement",
@@ -147,9 +158,9 @@ fun HomeScreen(navController: NavController) {
 
                 // Progress indicator
                 if (isMeasuring) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colors.primary
+                    CircularCountdownTimer(
+                        durationInSeconds = 3, // Длительность сигнала
+                        remainingTime = progress
                     )
                 }
             }
@@ -169,6 +180,30 @@ fun HomeScreen(navController: NavController) {
         }
     }
 }
+
+@Composable
+fun CircularCountdownTimer(
+    durationInSeconds: Int, // Полная длительность таймера
+    remainingTime: Int // Оставшееся время
+) {
+    val progress = remainingTime.toFloat() / durationInSeconds.toFloat()
+
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.dp)) {
+        CircularProgressIndicator(
+            progress = progress,
+            strokeWidth = 8.dp,
+            color = Color(0xFF6200EE),
+            modifier = Modifier.fillMaxSize()
+        )
+        Text(
+            text = "$remainingTime", // Отображаем оставшееся время
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+    }
+}
+
 
 @Composable
 fun AnimatedButton(
