@@ -46,9 +46,9 @@ fun HomeScreen(navController: NavController) {
     var isMeasuring by remember { mutableStateOf(false) }
     var messageText by remember { mutableStateOf("") }
     var showMessage by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var progress by remember { mutableStateOf(0) }
 
     // Request microphone permission
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -97,12 +97,21 @@ fun HomeScreen(navController: NavController) {
                     .padding(vertical = 16.dp)
             )
 
-            // Animated Message
-            AnimatedMessage(
-                message = messageText,
-                visible = showMessage,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+            // Reserved space for message
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp), // Reserve fixed height for the message
+                contentAlignment = Alignment.Center
+            ) {
+                if (showMessage) {
+                    AnimatedMessage(
+                        message = messageText,
+                        visible = showMessage,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -127,14 +136,14 @@ fun HomeScreen(navController: NavController) {
                 AnimatedButton(
                     onClick = {
                         isMeasuring = true
-                        progress = 3 // Начальное значение прогресса (длительность сигнала)
+                        progress = 3 // Начальное значение прогресса
 
                         viewModel.startMeasurement(
                             context = context,
                             note = note,
-                            duration = 3, // Передаем длительность сигнала
+                            duration = 3,
                             onProgressUpdate = { remainingTime ->
-                                progress = remainingTime // Обновляем прогресс
+                                progress = remainingTime
                             },
                             onComplete = { success, message ->
                                 isMeasuring = false
@@ -156,12 +165,19 @@ fun HomeScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Progress indicator
-                if (isMeasuring) {
-                    CircularCountdownTimer(
-                        durationInSeconds = 3, // Длительность сигнала
-                        remainingTime = progress
-                    )
+                // Reserved space for progress bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp), // Reserve fixed height for the progress bar
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isMeasuring) {
+                        CircularCountdownTimer(
+                            durationInSeconds = 3,
+                            remainingTime = progress
+                        )
+                    }
                 }
             }
 
@@ -183,8 +199,8 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun CircularCountdownTimer(
-    durationInSeconds: Int, // Полная длительность таймера
-    remainingTime: Int // Оставшееся время
+    durationInSeconds: Int,
+    remainingTime: Int
 ) {
     val progress = remainingTime.toFloat() / durationInSeconds.toFloat()
 
@@ -196,7 +212,7 @@ fun CircularCountdownTimer(
             modifier = Modifier.fillMaxSize()
         )
         Text(
-            text = "$remainingTime", // Отображаем оставшееся время
+            text = "$remainingTime",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
