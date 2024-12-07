@@ -26,7 +26,7 @@ fun SetupNavGraph(navController: NavHostController, paddingValues: PaddingValues
             HistoryScreen(context)
         }
         composable(Screen.Graph.route) {
-            GraphScreen(navController)
+            GraphScreen()
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController)

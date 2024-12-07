@@ -2,14 +2,12 @@ package com.example.directedsonarapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.liveData
+import com.example.directedsonarapp.data.database.Measurement
 import com.example.directedsonarapp.data.database.MeasurementDao
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 
 class GraphViewModel(private val dao: MeasurementDao) : ViewModel() {
-    val measurements = liveData(Dispatchers.IO) {
-        emit(dao.getAllMeasurements())
-    }
+    val measurements: Flow<List<Measurement>> = dao.getAllMeasurements()
 }
 
 class GraphViewModelFactory(private val dao: MeasurementDao) : ViewModelProvider.Factory {

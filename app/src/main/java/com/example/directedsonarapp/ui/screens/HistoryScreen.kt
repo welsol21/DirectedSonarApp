@@ -1,7 +1,6 @@
 package com.example.directedsonarapp.ui.screens
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -25,38 +24,96 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun SortableHeader(
-    text: String,
-    field: String,
-    currentSortField: String,
-    ascending: Boolean,
-    onSortChange: (String, Boolean) -> Unit
-) {
-    val width = when (field) {
-        "datetime" -> 140.dp
-        else -> 100.dp
+fun HistoryScreen(context: android.content.Context) {
+    val db = DatabaseProvider.getDatabase(context)
+    val dao = db.measurementDao()
+    val viewModel: HistoryViewModel = viewModel(factory = HistoryViewModelFactory(dao))
+
+    // Исправление для observeAsState
+    val measurements = viewModel.measurements.observeAsState(initial = emptyList()).value
+
+    val itemsPerPage = 10
+    var currentPage by remember { mutableStateOf(0) }
+    var sortField by remember { mutableStateOf("timestamp") }
+    var ascending by remember { mutableStateOf(false) }
+
+    val sortedMeasurements = remember(measurements, sortField, ascending) {
+        when (sortField) {
+            "distance" -> if (ascending) measurements.sortedBy { it.distance } else measurements.sortedByDescending { it.distance }
+            "timestamp" -> if (ascending) measurements.sortedBy { it.timestamp } else measurements.sortedByDescending { it.timestamp }
+            "note" -> if (ascending) measurements.sortedBy { it.note } else measurements.sortedByDescending { it.note }
+            else -> measurements
+        }
     }
 
-    Button(
-        onClick = {
-            if (currentSortField == field) {
-                onSortChange(field, !ascending)
-            } else {
-                onSortChange(field, true)
-            }
-        },
+    val paginatedMeasurements = sortedMeasurements.chunked(itemsPerPage)
+
+    Column(
         modifier = Modifier
-            .width(width)
-            .padding(horizontal = 4.dp),
-        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = text + if (currentSortField == field) {
-                if (ascending) " ↑" else " ↓"
-            } else "",
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.subtitle1
-        )
+        // Заголовки
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            SortableHeader("Distance", "distance", sortField, ascending) { field, asc ->
+                sortField = field
+                ascending = asc
+            }
+            SortableHeader("Datetime", "timestamp", sortField, ascending) { field, asc ->
+                sortField = field
+                ascending = asc
+            }
+            SortableHeader("Note", "note", sortField, ascending) { field, asc ->
+                sortField = field
+                ascending = asc
+            }
+        }
+
+        // Таблица
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .padding(top = 8.dp)
+        ) {
+            val currentItems = paginatedMeasurements.getOrNull(currentPage) ?: emptyList()
+            itemsIndexed(currentItems) { _, measurement ->
+                MeasurementRow(
+                    measurement = measurement,
+                    onUpdateNote = { newNote ->
+                        viewModel.updateMeasurementNote(measurement, newNote)
+                    }
+                )
+                Divider()
+            }
+        }
+
+        // Пагинация
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(
+                onClick = { if (currentPage > 0) currentPage-- },
+                enabled = currentPage > 0
+            ) {
+                Text("Previous")
+            }
+            Text(
+                text = "Page ${currentPage + 1} of ${paginatedMeasurements.size}",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                style = TextStyle(fontSize = 14.sp)
+            )
+            Button(
+                onClick = { if (currentPage < paginatedMeasurements.size - 1) currentPage++ },
+                enabled = currentPage < paginatedMeasurements.size - 1
+            ) {
+                Text("Next")
+            }
+        }
     }
 }
 
@@ -79,12 +136,12 @@ fun MeasurementRow(
     ) {
         Text(
             text = "%.2f".format(measurement.distance),
-            modifier = Modifier.width(100.dp).padding(horizontal = 4.dp), // Фиксированная ширина
+            modifier = Modifier.width(100.dp).padding(horizontal = 4.dp),
             textAlign = TextAlign.Center
         )
         Text(
             text = datetimeFormat.format(dateTime),
-            modifier = Modifier.width(140.dp).padding(horizontal = 4.dp), // Фиксированная ширина
+            modifier = Modifier.width(140.dp).padding(horizontal = 4.dp),
             textAlign = TextAlign.Center
         )
         TextField(
@@ -102,106 +159,32 @@ fun MeasurementRow(
 }
 
 @Composable
-fun HistoryScreen(context: android.content.Context) {
-    val db = DatabaseProvider.getDatabase(context)
-    val dao = db.measurementDao()
-    val viewModel: HistoryViewModel = viewModel(factory = HistoryViewModelFactory(dao))
-
-    val measurements by viewModel.measurements.observeAsState(emptyList())
-    val itemsPerPage = 10
-    var currentPage by remember { mutableStateOf(0) }
-    var sortField by remember { mutableStateOf("distance") }
-    var ascending by remember { mutableStateOf(true) }
-
-    val sortedMeasurements = remember(measurements, sortField, ascending) {
-        when (sortField) {
-            "distance" -> if (ascending) measurements.sortedBy { it.distance } else measurements.sortedByDescending { it.distance }
-            "datetime" -> if (ascending) measurements.sortedBy { it.timestamp } else measurements.sortedByDescending { it.timestamp }
-            "note" -> if (ascending) measurements.sortedBy { it.note } else measurements.sortedByDescending { it.note }
-            else -> measurements
-        }
-    }
-
-    val paginatedMeasurements = sortedMeasurements.chunked(itemsPerPage)
-
-    Column(
+fun SortableHeader(
+    text: String,
+    field: String,
+    currentSortField: String,
+    ascending: Boolean,
+    onSortChange: (String, Boolean) -> Unit
+) {
+    Button(
+        onClick = {
+            if (currentSortField == field) {
+                onSortChange(field, !ascending)
+            } else {
+                onSortChange(field, true)
+            }
+        },
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .width(140.dp)
+            .padding(horizontal = 4.dp),
+        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)
     ) {
-        // Table header with sorting
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            SortableHeader("Distance (m)", "distance", sortField, ascending) { field, asc ->
-                sortField = field
-                ascending = asc
-            }
-            SortableHeader("Datetime", "datetime", sortField, ascending) { field, asc ->
-                sortField = field
-                ascending = asc
-            }
-            SortableHeader("Note", "note", sortField, ascending) { field, asc ->
-                sortField = field
-                ascending = asc
-            }
-        }
-
-        // LazyColumn for paginated data
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxHeight(0.8f)
-                .padding(vertical = 8.dp)
-        ) {
-            val currentItems = paginatedMeasurements.getOrNull(currentPage) ?: emptyList()
-
-            itemsIndexed(currentItems) { _, measurement ->
-                MeasurementRow(
-                    measurement = measurement,
-                    onUpdateNote = { newNote ->
-                        viewModel.updateMeasurementNote(measurement, newNote)
-                    }
-                )
-                Divider()
-            }
-        }
-
-        // Pagination controls
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Button(
-                onClick = { if (currentPage > 0) currentPage-- },
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3700B3),
-                    contentColor = Color.White
-                ),
-                enabled = currentPage > 0
-            ) {
-                Text("Previous")
-            }
-            Text(
-                text = "Page ${currentPage + 1} of ${paginatedMeasurements.size}",
-                modifier = Modifier.align(Alignment.CenterVertically),
-                style = TextStyle(fontSize = 14.sp)
-            )
-            Button(
-                onClick = { if (currentPage < paginatedMeasurements.size - 1) currentPage++ },
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF3700B3),
-                    contentColor = Color.White
-                ),
-                enabled = currentPage < paginatedMeasurements.size - 1
-            ) {
-                Text("Next")
-            }
-        }
+        Text(
+            text = text + if (currentSortField == field) {
+                if (ascending) " ↑" else " ↓"
+            } else "",
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.subtitle1
+        )
     }
 }

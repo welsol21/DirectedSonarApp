@@ -16,19 +16,19 @@ import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun GraphScreen(navController: NavController) {
+fun GraphScreen() {
     val context = LocalContext.current
     val db = DatabaseProvider.getDatabase(context)
     val dao = db.measurementDao()
     val viewModel: GraphViewModel = viewModel(factory = GraphViewModelFactory(dao))
 
-    val measurements by viewModel.measurements.observeAsState(emptyList())
+    // Используем Flow и преобразуем его в State
+    val measurements = viewModel.measurements.collectAsStateWithLifecycle(initialValue = emptyList())
 
-    val entries = measurements.mapIndexed { index, measurement ->
+    val entries = measurements.value.mapIndexed { index, measurement ->
         Entry(index.toFloat(), measurement.distance.toFloat())
     }
 
