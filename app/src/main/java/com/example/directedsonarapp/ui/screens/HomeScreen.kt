@@ -71,110 +71,122 @@ fun HomeScreen(navController: NavController) {
         modifier = Modifier.fillMaxSize(),
         bottomBar = { Spacer(modifier = Modifier.height(56.dp)) }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // App Title
-            Text(
-                text = "Directed Sonar App",
-                style = MaterialTheme.typography.h4.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
-                    color = MaterialTheme.colors.primary
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
+            item {
+                // App Title
+                Text(
+                    text = "Directed Sonar App",
+                    style = MaterialTheme.typography.h4.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp,
+                        color = MaterialTheme.colors.primary
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                )
+            }
 
-            // Box for Progress Bar or Message
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp), // Reserved height for progress bar or message
-                contentAlignment = Alignment.Center
-            ) {
-                if (isMeasuring) {
-                    CircularCountdownTimer(
-                        durationInSeconds = 3,
-                        remainingTime = progress
+            item {
+                // Box for Progress Bar or Message
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp), // Reserved height for progress bar or message
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isMeasuring) {
+                        CircularCountdownTimer(
+                            durationInSeconds = 3,
+                            remainingTime = progress
+                        )
+                    } else if (messageText.isNotEmpty()) {
+                        AnimatedMessage(
+                            message = messageText,
+                            visible = true,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Input field for note
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text("Enter note (optional)") },
+                        placeholder = { Text("E.g., Living room") },
+                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
                     )
-                } else if (messageText.isNotEmpty()) {
-                    AnimatedMessage(
-                        message = messageText,
-                        visible = true,
-                        modifier = Modifier.align(Alignment.Center)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Start measurement button
+                    AnimatedButton(
+                        onClick = {
+                            isMeasuring = true
+                            progress = 3 // Initial countdown duration
+
+                            viewModel.startMeasurement(
+                                context = context,
+                                note = note,
+                                duration = 3,
+                                onProgressUpdate = { remainingTime ->
+                                    progress = remainingTime
+                                },
+                                onComplete = { success, message ->
+                                    isMeasuring = false
+                                    messageText = message
+                                }
+                            )
+                        },
+                        enabled = !isMeasuring,
+                        text = if (isMeasuring) "Measuring..." else "Start Measurement",
+                        modifier = Modifier
+                            .fillMaxWidth(0.65f)
+                            .height(56.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Input field for note
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Enter note (optional)") },
-                    placeholder = { Text("E.g., Living room") },
-                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Start measurement button
-                AnimatedButton(
-                    onClick = {
-                        isMeasuring = true
-                        progress = 3 // Initial countdown duration
-
-                        viewModel.startMeasurement(
-                            context = context,
-                            note = note,
-                            duration = 3,
-                            onProgressUpdate = { remainingTime ->
-                                progress = remainingTime
-                            },
-                            onComplete = { success, message ->
-                                isMeasuring = false
-                                messageText = message
-                            }
-                        )
-                    },
-                    enabled = !isMeasuring,
-                    text = if (isMeasuring) "Measuring..." else "Start Measurement",
-                    modifier = Modifier
-                        .fillMaxWidth(0.65f)
-                        .height(56.dp)
-                )
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Footer text
-            Text(
-                text = "Measure distances with sound waves",
-                style = MaterialTheme.typography.body2.copy(
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
+            item {
+                // Footer text
+                Text(
+                    text = "Measure distances with sound waves",
+                    style = MaterialTheme.typography.body2.copy(
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }
