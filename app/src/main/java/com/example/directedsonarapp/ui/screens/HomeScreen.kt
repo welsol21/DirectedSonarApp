@@ -46,9 +46,7 @@ fun HomeScreen(navController: NavController) {
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
     var messageText by remember { mutableStateOf("") }
-    var showMessage by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     // Request microphone permission
@@ -57,7 +55,7 @@ fun HomeScreen(navController: NavController) {
         onResult = { isGranted ->
             if (!isGranted) {
                 scope.launch {
-                    snackbarHostState.showSnackbar("Microphone permission is required")
+                    messageText = "Microphone permission is required"
                 }
             }
         }
@@ -71,137 +69,112 @@ fun HomeScreen(navController: NavController) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = { Spacer(modifier = Modifier.height(56.dp)) },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        }
+        bottomBar = { Spacer(modifier = Modifier.height(56.dp)) }
     ) { innerPadding ->
-        // Wrapping content in LazyColumn for scrolling
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                // App Title
-                Text(
-                    text = "Directed Sonar App",
-                    style = MaterialTheme.typography.h4.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = MaterialTheme.colors.primary
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                )
+            // App Title
+            Text(
+                text = "Directed Sonar App",
+                style = MaterialTheme.typography.h4.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp,
+                    color = MaterialTheme.colors.primary
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            )
+
+            // Box for Progress Bar or Message
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp), // Reserved height for progress bar or message
+                contentAlignment = Alignment.Center
+            ) {
+                if (isMeasuring) {
+                    CircularCountdownTimer(
+                        durationInSeconds = 3,
+                        remainingTime = progress
+                    )
+                } else if (messageText.isNotEmpty()) {
+                    AnimatedMessage(
+                        message = messageText,
+                        visible = true,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
 
-            item {
-                // Reserved space for message
-                Box(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Input field for note
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Enter note (optional)") },
+                    placeholder = { Text("E.g., Living room") },
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (showMessage) {
-                        AnimatedMessage(
-                            message = messageText,
-                            visible = showMessage,
-                            modifier = Modifier.align(Alignment.Center)
+                        .padding(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Start measurement button
+                AnimatedButton(
+                    onClick = {
+                        isMeasuring = true
+                        progress = 3 // Initial countdown duration
+
+                        viewModel.startMeasurement(
+                            context = context,
+                            note = note,
+                            duration = 3,
+                            onProgressUpdate = { remainingTime ->
+                                progress = remainingTime
+                            },
+                            onComplete = { success, message ->
+                                isMeasuring = false
+                                messageText = message
+                            }
                         )
-                    }
-                }
-            }
-
-            item {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Input field for note
-                    OutlinedTextField(
-                        value = note,
-                        onValueChange = { note = it },
-                        label = { Text("Enter note (optional)") },
-                        placeholder = { Text("E.g., Living room") },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Start measurement button
-                    AnimatedButton(
-                        onClick = {
-                            isMeasuring = true
-                            progress = 3
-
-                            viewModel.startMeasurement(
-                                context = context,
-                                note = note,
-                                duration = 3,
-                                onProgressUpdate = { remainingTime ->
-                                    progress = remainingTime
-                                },
-                                onComplete = { success, message ->
-                                    isMeasuring = false
-                                    messageText = message
-                                    showMessage = true
-                                    scope.launch {
-                                        kotlinx.coroutines.delay(3000)
-                                        showMessage = false
-                                    }
-                                }
-                            )
-                        },
-                        enabled = !isMeasuring,
-                        text = if (isMeasuring) "Measuring..." else "Start Measurement",
-                        modifier = Modifier
-                            .fillMaxWidth(0.65f)
-                            .height(56.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Reserved space for progress bar
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isMeasuring) {
-                            CircularCountdownTimer(
-                                durationInSeconds = 3,
-                                remainingTime = progress
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-                // Footer text
-                Text(
-                    text = "Measure distances with sound waves",
-                    style = MaterialTheme.typography.body2.copy(
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    ),
-                    textAlign = TextAlign.Center,
+                    },
+                    enabled = !isMeasuring,
+                    text = if (isMeasuring) "Measuring..." else "Start Measurement",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(0.65f)
+                        .height(56.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Footer text
+            Text(
+                text = "Measure distances with sound waves",
+                style = MaterialTheme.typography.body2.copy(
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
         }
     }
 }
@@ -216,19 +189,18 @@ fun CircularCountdownTimer(
     Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.dp)) {
         CircularProgressIndicator(
             progress = progress,
-            strokeWidth = 8.dp,
+            strokeWidth = 4.dp,
             color = Color(0xFF6200EE),
             modifier = Modifier.fillMaxSize()
         )
         Text(
             text = "$remainingTime",
-            fontSize = 20.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
     }
 }
-
 
 @Composable
 fun AnimatedButton(
