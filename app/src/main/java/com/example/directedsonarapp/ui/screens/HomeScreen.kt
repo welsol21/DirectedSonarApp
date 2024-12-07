@@ -142,7 +142,7 @@ fun HomeScreen(navController: NavController) {
                     AnimatedButton(
                         onClick = {
                             isMeasuring = true
-                            progress = 3 // Начальное значение прогресса
+                            progress = 3
 
                             viewModel.startMeasurement(
                                 context = context,

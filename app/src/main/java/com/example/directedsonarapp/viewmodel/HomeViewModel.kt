@@ -21,31 +21,41 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlinx.coroutines.delay
 
 class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
 
     fun startMeasurement(
         context: Context,
         note: String,
-        duration: Int, // Длительность сигнала
-        onProgressUpdate: (Int) -> Unit, // Для обновления прогресса
+        duration: Int,
+        onProgressUpdate: (Int) -> Unit,
         onComplete: (Boolean, String) -> Unit
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Обратный отсчет времени
-                repeat(duration) { elapsed ->
-                    onProgressUpdate(duration - elapsed) // Обновляем оставшееся время
-                    kotlinx.coroutines.delay(1000) // Ждем 1 секунду
+                val timestamp = System.currentTimeMillis()
+                var distance = 0.0
+
+                // Start the countdown timer and signal playback simultaneously
+                val countdownJob = launch {
+                    repeat(duration) { elapsed ->
+                        onProgressUpdate(duration - elapsed) // Update remaining time
+                        delay(1000) // Wait for 1 second
+                    }
+                    // Final update to set the counter to 0
+                    onProgressUpdate(0)
                 }
 
-                onProgressUpdate(0) // Прогресс завершен
+                val measurementJob = launch {
+                    distance = measureDistance(context) // Perform the measurement
+                }
 
-                // Запускаем процесс измерения
-                val distance = measureDistance(context)
-                Log.d("AudioDebug", "Calculated distance: $distance")
-                val timestamp = System.currentTimeMillis()
+                // Wait for both jobs to complete
+                countdownJob.join() // Wait for countdown timer to finish
+                measurementJob.join() // Wait for measurement to finish
 
+                // Save the measurement after both processes finish
                 val measurement = Measurement(distance = distance, timestamp = timestamp, note = note)
                 dao.insert(measurement)
 
