@@ -147,6 +147,8 @@ fun HomeScreen(navController: NavController) {
                             isMeasuring = true
                             progress = 3 // Initial countdown duration
 
+//                            note =
+
                             viewModel.startMeasurement(
                                 context = context,
                                 note = note,

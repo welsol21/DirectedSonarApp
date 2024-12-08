@@ -29,7 +29,7 @@ fun SetupNavGraph(navController: NavHostController, paddingValues: PaddingValues
             GraphScreen()
         }
         composable(Screen.Settings.route) {
-            SettingsScreen(navController)
+            SettingsScreen()
         }
     }
 }
