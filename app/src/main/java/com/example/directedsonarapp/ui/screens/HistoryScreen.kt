@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,21 +54,44 @@ fun HistoryScreen(context: android.content.Context) {
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.Start
         ) {
-            SortableHeader("Distance", "distance", sortField, ascending) { field, asc ->
-                sortField = field
-                ascending = asc
-            }
-            SortableHeader("Datetime", "timestamp", sortField, ascending) { field, asc ->
-                sortField = field
-                ascending = asc
-            }
-            SortableHeader("Note", "note", sortField, ascending) { field, asc ->
-                sortField = field
-                ascending = asc
-            }
+            SortableHeader(
+                text = "Distance",
+                field = "distance",
+                width = 100.dp,
+                currentSortField = sortField,
+                ascending = ascending,
+                onSortChange = { field, asc ->
+                    sortField = field
+                    ascending = asc
+                }
+            )
+            SortableHeader(
+                text = "Datetime",
+                field = "timestamp",
+                width = 150.dp,
+                currentSortField = sortField,
+                ascending = ascending,
+                onSortChange = { field, asc ->
+                    sortField = field
+                    ascending = asc
+                }
+            )
+            SortableHeader(
+                text = "Note",
+                field = "note",
+                width = 200.dp,
+                currentSortField = sortField,
+                ascending = ascending,
+                onSortChange = { field, asc ->
+                    sortField = field
+                    ascending = asc
+                }
+            )
         }
 
         LazyColumn(
@@ -124,14 +148,14 @@ fun MeasurementRow(
         Text(
             text = "%.2f".format(measurement.distance),
             modifier = Modifier
-                .width(100.dp)
+                .width(90.dp)
                 .padding(horizontal = 4.dp),
             textAlign = TextAlign.Center
         )
         Text(
             text = datetimeFormat.format(dateTime),
             modifier = Modifier
-                .width(140.dp)
+                .width(160.dp)
                 .padding(horizontal = 4.dp),
             textAlign = TextAlign.Center
         )
@@ -148,15 +172,18 @@ fun MeasurementRow(
     }
 }
 
-
 @Composable
 fun SortableHeader(
     text: String,
     field: String,
+    width: Dp,
     currentSortField: String,
     ascending: Boolean,
     onSortChange: (String, Boolean) -> Unit
 ) {
+    val backgroundColor = if (currentSortField == field) Color(0xFF3700B3) else Color.Gray
+    val textColor = Color.White
+
     Button(
         onClick = {
             if (currentSortField == field) {
@@ -166,16 +193,24 @@ fun SortableHeader(
             }
         },
         modifier = Modifier
-            .width(140.dp)
-            .padding(horizontal = 4.dp),
-        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent)
+            .width(width)
+            .padding(horizontal = 2.dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = backgroundColor,
+            contentColor = textColor
+        ),
+        shape = RoundedCornerShape(16.dp) // Оставляем форму кнопок заголовков
     ) {
         Text(
             text = text + if (currentSortField == field) {
                 if (ascending) " ↑" else " ↓"
             } else "",
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.subtitle1
+            style = MaterialTheme.typography.button.copy(
+                fontSize = 14.sp, // Размер шрифта
+                fontWeight = FontWeight.Bold,
+                color = textColor // Цвет текста
+            )
         )
     }
 }
