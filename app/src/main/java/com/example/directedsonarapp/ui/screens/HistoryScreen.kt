@@ -4,12 +4,14 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,16 +87,21 @@ fun HistoryScreen(context: android.content.Context) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Button(onClick = { if (currentPage > 0) currentPage-- }, enabled = currentPage > 0) {
-                Text("Previous")
-            }
-            Text("Page ${currentPage + 1} of ${paginatedMeasurements.size}")
-            Button(
+            CustomButton(
+                text = "Previous",
+                onClick = { if (currentPage > 0) currentPage-- },
+                enabled = currentPage > 0
+            )
+            Text(
+                text = "Page ${currentPage + 1} of ${paginatedMeasurements.size}",
+                modifier = Modifier.align(Alignment.CenterVertically),
+                style = MaterialTheme.typography.body1.copy(fontSize = 14.sp)
+            )
+            CustomButton(
+                text = "Next",
                 onClick = { if (currentPage < paginatedMeasurements.size - 1) currentPage++ },
                 enabled = currentPage < paginatedMeasurements.size - 1
-            ) {
-                Text("Next")
-            }
+            )
         }
     }
 }
@@ -169,6 +176,35 @@ fun SortableHeader(
             } else "",
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.subtitle1
+        )
+    }
+}
+
+@Composable
+fun CustomButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .padding(horizontal = 8.dp)
+            .height(50.dp),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = if (enabled) Color(0xFF3700B3) else Color.Gray,
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.button.copy(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         )
     }
 }
