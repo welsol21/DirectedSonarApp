@@ -83,13 +83,14 @@ fun GraphScreen() {
                     if (entries.isNotEmpty()) {
                         val dataSet = BarDataSet(entries, "Measurements for $currentKey").apply {
                             color = Color.BLUE
-                            valueTextColor = Color.WHITE
-                            valueTextSize = 14f
+                            valueTextColor = Color.TRANSPARENT // Скрываем текст значений
+                            valueTextSize = 0f // Обнуляем размер текста значений
                         }
 
-                        chart.data = BarData(dataSet)
+                        val barData = BarData(dataSet)
+                        chart.data = barData
 
-                        // Очищаем старые лимитные линии
+                        // Удаление старых лимитных линий
                         chart.axisLeft.removeAllLimitLines()
 
                         // Рассчитываем медиану
@@ -101,17 +102,20 @@ fun GraphScreen() {
                         }
 
                         // Добавляем линию медианы
-                        chart.axisLeft.addLimitLine(com.github.mikephil.charting.components.LimitLine(median, "Median: %.2f".format(median)).apply {
-                            lineColor = Color.RED
-                            lineWidth = 2f
-                            textColor = Color.RED
-                            textSize = 12f
-                            enableDashedLine(10f, 10f, 0f)
-                        })
+                        chart.axisLeft.addLimitLine(
+                            com.github.mikephil.charting.components.LimitLine(median, "Median: %.2f".format(median)).apply {
+                                lineColor = Color.RED
+                                lineWidth = 5f
+                                typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD) // Жирный текст
+                                textColor = Color.RED // Цвет текста медианы
+                                textSize = 16f
+                                enableDashedLine(10f, 15f, 0f)
+                            }
+                        )
 
                         // Настраиваем ось X
                         chart.xAxis.apply {
-                            textColor = Color.WHITE
+                            textColor = Color.GRAY // Серый текст
                             textSize = 12f
                             setDrawGridLines(false)
                             position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
@@ -124,20 +128,36 @@ fun GraphScreen() {
 
                         // Настраиваем ось Y
                         chart.axisLeft.apply {
-                            textColor = Color.WHITE
+                            textColor = Color.GRAY // Серый текст
                             textSize = 12f
                             axisMinimum = 0f // Минимальное значение на оси Y
+                            axisMaximum = (entries.maxOfOrNull { it.y } ?: 0f) + 2f // Увеличьте максимум оси, чтобы включить медиану
+
+                            // Добавляем линию ограничений для медианы
+                            val medianLimitLine = com.github.mikephil.charting.components.LimitLine(median, "%.2f".format(median)).apply {
+                                lineColor = Color.TRANSPARENT // Цвет линии
+                                lineWidth = 2f // Толщина линии
+                                labelPosition = com.github.mikephil.charting.components.LimitLine.LimitLabelPosition.LEFT_TOP // Положение текста
+                                textSize = 16f // Размер текста
+                                textColor = Color.RED // Цвет текста
+                            }
+                            addLimitLine(medianLimitLine) // Добавляем линию на ось Y
                         }
 
                         chart.axisRight.isEnabled = false // Отключаем правую ось
 
+                        // Отключение описания графика
                         chart.description.isEnabled = false
-                        chart.legend.textColor = Color.WHITE // Цвет текста легенды
 
+                        // Цвет легенды
+                        chart.legend.textColor = Color.GRAY // Серый текст легенды
+
+                        // Обновляем график
                         chart.invalidate()
                     } else {
                         chart.clear()
                         chart.setNoDataText("No data available")
+                        chart.setNoDataTextColor(Color.GRAY) // Серый текст "No data available"
                     }
                 }
             )
