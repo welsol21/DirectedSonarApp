@@ -1,6 +1,8 @@
 package com.example.directedsonarapp.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,10 +24,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val sampleRate by viewModel.sampleRate.observeAsState(48000)
     val frequency by viewModel.frequency.observeAsState(440)
 
-    // Main layout
+    // Scroll state for vertical scrolling
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState) // Enable vertical scrolling
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -43,11 +48,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 .padding(vertical = 16.dp)
         )
 
-        // Space for content
+        // Content
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f), // Ensures proper spacing
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Signal Count
