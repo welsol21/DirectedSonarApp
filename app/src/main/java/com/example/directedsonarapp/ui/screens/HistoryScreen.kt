@@ -1,10 +1,7 @@
 package com.example.directedsonarapp.ui.screens
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -14,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,13 +35,13 @@ fun HistoryScreen(context: android.content.Context) {
     val viewModel: HistoryViewModel = viewModel(factory = HistoryViewModelFactory(dao))
 
     val measurements by viewModel.measurements.collectAsStateWithLifecycle(initialValue = emptyList())
+    val filterText by viewModel.filterText
 
     val itemsPerPage = 10
     var currentPage by remember { mutableStateOf(0) }
     var sortField by remember { mutableStateOf("timestamp") }
     var ascending by remember { mutableStateOf(false) }
     var isFiltering by remember { mutableStateOf(false) }
-    var filterText by remember { mutableStateOf("") }
 
     val filteredMeasurements = remember(measurements, filterText) {
         if (filterText.isEmpty()) {
@@ -101,7 +97,7 @@ fun HistoryScreen(context: android.content.Context) {
             NoteHeader(
                 isFiltering = isFiltering,
                 filterText = filterText,
-                onFilterChange = { filterText = it },
+                onFilterChange = { viewModel.updateFilterText(it) },
                 onToggleFiltering = { isFiltering = !isFiltering },
                 sortField = sortField,
                 ascending = ascending,
