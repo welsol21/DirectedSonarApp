@@ -54,11 +54,18 @@ fun GraphScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         if (pages.isNotEmpty()) {
             val currentKey = pages[currentPage]
-            val entries = groupedMeasurements[currentKey]?.mapIndexed { index, measurement ->
-                BarEntry(index.toFloat(), measurement.distance.toFloat()).apply {
-                    data = measurement.timestamp
-                }
-            } ?: emptyList()
+            val currentMeasurements = groupedMeasurements[currentKey] ?: emptyList()
+            val entries = currentMeasurements.mapIndexed { index, measurement ->
+                BarEntry(index.toFloat(), measurement.distance.toFloat()) // Преобразование Double в Float
+            }
+
+            // Рассчитываем медиану
+            val median = currentMeasurements.map { it.distance.toFloat() }.sorted().let { sortedList ->
+                if (sortedList.isEmpty()) 0f
+                else if (sortedList.size % 2 == 0) {
+                    (sortedList[sortedList.size / 2 - 1] + sortedList[sortedList.size / 2]) / 2
+                } else sortedList[sortedList.size / 2]
+            }
 
             AndroidView(
                 modifier = Modifier
@@ -79,7 +86,54 @@ fun GraphScreen() {
                             valueTextColor = Color.WHITE
                             valueTextSize = 14f
                         }
+
                         chart.data = BarData(dataSet)
+
+                        // Очищаем старые лимитные линии
+                        chart.axisLeft.removeAllLimitLines()
+
+                        // Рассчитываем медиану
+                        val median = currentMeasurements.map { it.distance.toFloat() }.sorted().let { sortedList ->
+                            if (sortedList.isEmpty()) 0f
+                            else if (sortedList.size % 2 == 0) {
+                                (sortedList[sortedList.size / 2 - 1] + sortedList[sortedList.size / 2]) / 2
+                            } else sortedList[sortedList.size / 2]
+                        }
+
+                        // Добавляем линию медианы
+                        chart.axisLeft.addLimitLine(com.github.mikephil.charting.components.LimitLine(median, "Median: %.2f".format(median)).apply {
+                            lineColor = Color.RED
+                            lineWidth = 2f
+                            textColor = Color.RED
+                            textSize = 12f
+                            enableDashedLine(10f, 10f, 0f)
+                        })
+
+                        // Настраиваем ось X
+                        chart.xAxis.apply {
+                            textColor = Color.WHITE
+                            textSize = 12f
+                            setDrawGridLines(false)
+                            position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
+                            valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(
+                                currentMeasurements.map {
+                                    SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()).format(Date(it.timestamp))
+                                }
+                            )
+                        }
+
+                        // Настраиваем ось Y
+                        chart.axisLeft.apply {
+                            textColor = Color.WHITE
+                            textSize = 12f
+                            axisMinimum = 0f // Минимальное значение на оси Y
+                        }
+
+                        chart.axisRight.isEnabled = false // Отключаем правую ось
+
+                        chart.description.isEnabled = false
+                        chart.legend.textColor = Color.WHITE // Цвет текста легенды
+
                         chart.invalidate()
                     } else {
                         chart.clear()
