@@ -178,7 +178,7 @@ fun GraphScreen() {
                 modifier = Modifier.align(Alignment.CenterVertically),
                 style = androidx.compose.material.MaterialTheme.typography.body1.copy(
                     fontSize = 14.sp,
-                    color = ComposeColor.White
+                    color = ComposeColor.Gray
                 )
             )
             PaginationButton(
