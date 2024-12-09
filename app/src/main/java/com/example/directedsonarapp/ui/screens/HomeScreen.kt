@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 import android.app.Application
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -48,10 +49,11 @@ fun HomeScreen(navController: NavController) {
         factory = HomeViewModelFactory(application, dao)
     )
 
-    var note by remember { mutableStateOf("") }
-    var isMeasuring by remember { mutableStateOf(false) }
-    var progress by remember { mutableStateOf(0) }
-    var messages by remember { mutableStateOf("") } // Single string for displaying results
+    // Use `rememberSaveable` to retain state during configuration changes
+    var note by rememberSaveable { mutableStateOf("") }
+    var isMeasuring by rememberSaveable { mutableStateOf(false) }
+    var progress by rememberSaveable { mutableStateOf(0) }
+    var messages by rememberSaveable { mutableStateOf("") } // Store messages as a single string
     val totalDuration = viewModel.signalCount * viewModel.signalDuration
     val scope = rememberCoroutineScope()
 
@@ -59,112 +61,131 @@ fun HomeScreen(navController: NavController) {
         modifier = Modifier.fillMaxSize(),
         bottomBar = { Spacer(modifier = Modifier.height(56.dp)) }
     ) { innerPadding ->
-        Column(
+        // Add LazyColumn for scrolling
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // App title
-            Text(
-                text = "Directed Sonar App",
-                style = MaterialTheme.typography.h4.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp,
-                    color = MaterialTheme.colors.primary
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            )
+            item {
+                // App title
+                Text(
+                    text = "Directed Sonar App",
+                    style = MaterialTheme.typography.h4.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp,
+                        color = MaterialTheme.colors.primary
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp)
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            // Box for Progress Bar or Messages
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp), // Reserved height for progress bar or messages
-                contentAlignment = Alignment.Center
-            ) {
-                if (isMeasuring) {
-                    CircularCountdownTimer(
-                        durationInSeconds = totalDuration,
-                        remainingTime = progress
-                    )
-                } else if (messages.isNotEmpty()) {
-                    Text(
-                        text = messages,
-                        style = MaterialTheme.typography.body1.copy(
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colors.onSurface
-                        ),
-                        textAlign = TextAlign.Center
-                    )
+            item {
+                // Box for Progress Bar or Messages
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp), // Reserved height for progress bar or messages
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isMeasuring) {
+                        CircularCountdownTimer(
+                            durationInSeconds = totalDuration,
+                            remainingTime = progress
+                        )
+                    } else if (messages.isNotEmpty()) {
+                        Text(
+                            text = messages,
+                            style = MaterialTheme.typography.body1.copy(
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colors.onSurface
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            // Input field for Note
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Enter note (optional)") },
-                placeholder = { Text("E.g., Living room") },
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            )
+            item {
+                // Input field for Note
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Enter note (optional)") },
+                    placeholder = { Text("E.g., Living room") },
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                )
+            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-            // Start measurement button
-            AnimatedButton(
-                onClick = {
-                    isMeasuring = true
-                    progress = totalDuration
-                    messages = "" // Clear previous messages
+            item {
+                // Start measurement button
+                AnimatedButton(
+                    onClick = {
+                        isMeasuring = true
+                        progress = totalDuration
+                        messages = "" // Clear previous messages
 
-                    viewModel.startMeasurement(
-                        context = context,
-                        note = note,
-                        onProgressUpdate = { remainingTime ->
-                            progress = remainingTime
-                        },
-                        onSignalComplete = { message ->
-                            messages += "$message\n" // Append new message
-                        },
-                        onComplete = { success, message ->
-                            isMeasuring = false
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                        }
-                    )
-                },
-                enabled = !isMeasuring,
-                text = if (isMeasuring) "Measuring..." else "Start Measurement",
-                modifier = Modifier
-                    .fillMaxWidth(0.65f)
-                    .height(56.dp)
-            )
+                        viewModel.startMeasurement(
+                            context = context,
+                            note = note,
+                            onProgressUpdate = { remainingTime ->
+                                progress = remainingTime
+                            },
+                            onSignalComplete = { message ->
+                                messages += "$message\n" // Append new message
+                            },
+                            onComplete = { success, message ->
+                                isMeasuring = false
+                                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    },
+                    enabled = !isMeasuring,
+                    text = if (isMeasuring) "Measuring..." else "Start Measurement",
+                    modifier = Modifier
+                        .fillMaxWidth(0.65f)
+                        .height(56.dp)
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            // Footer text
-            Text(
-                text = "Measure distances with sound waves",
-                style = MaterialTheme.typography.body2.copy(
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
+            item {
+                // Footer text
+                Text(
+                    text = "Measure distances with sound waves",
+                    style = MaterialTheme.typography.body2.copy(
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
         }
     }
 }

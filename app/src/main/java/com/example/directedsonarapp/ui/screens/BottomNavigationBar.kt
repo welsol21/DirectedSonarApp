@@ -28,7 +28,7 @@ fun BottomNavigationBar(navController: NavHostController) {
     )
 
     BottomNavigation(
-        modifier = Modifier.height(121.dp),
+        modifier = Modifier.height(100.dp),
         backgroundColor = Color(0xFF6200EE),
         contentColor = Color.Unspecified
     ) {
