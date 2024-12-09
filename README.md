@@ -87,7 +87,7 @@
 ## Installation
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/your-repo/directed-sonar-app.git
+   git clone https://github.com/welsol21/directed-sonar-app.git
    ```
 2. Open the project in Android Studio.
 3. Build and run the application on an emulator or physical device.
