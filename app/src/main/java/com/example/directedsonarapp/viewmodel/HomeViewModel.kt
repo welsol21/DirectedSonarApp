@@ -56,8 +56,9 @@ class HomeViewModel(application: Application, private val dao: MeasurementDao) :
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val timestamp = System.currentTimeMillis()
-                val distances = mutableListOf<Double>()
                 val dateTime = SimpleDateFormat("yy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+
+                // Заметка для всей серии измерений
                 val formattedNote = if (note.isBlank()) {
                     "${signalCount} x ${signalDuration} c, $sampleRate Hz, $frequency Hz: $dateTime"
                 } else {
@@ -65,30 +66,35 @@ class HomeViewModel(application: Application, private val dao: MeasurementDao) :
                 }
 
                 for (currentSignal in 1..signalCount) {
+                    // Выполняем замер
                     val distance = measureDistance(context)
-                    distances.add(distance)
+
+                    // Сохраняем результат замера в базу данных
+                    val measurement = Measurement(
+                        distance = distance,
+                        timestamp = System.currentTimeMillis(), // Уникальный временной штамп для каждого замера
+                        note = formattedNote // Одинаковая заметка для всех замеров в серии
+                    )
+                    dao.insert(measurement) // Сохраняем замер
+
+                    // Обновляем UI с результатом текущего сигнала
                     val message = "Signal $currentSignal: ${"%.2f".format(distance)} m"
                     onSignalComplete(message)
+
+                    // Обновляем прогресс-бар
                     onProgressUpdate(totalDuration - currentSignal * signalDuration)
                 }
-
-                val measurement = Measurement(
-                    distance = distances.average(),
-                    timestamp = timestamp,
-                    note = formattedNote
-                )
-                dao.insert(measurement)
 
                 launch(Dispatchers.Main) {
                     onComplete(
                         true,
-                        "Measurement saved successfully!\nAverage Distance: ${"%.2f".format(distances.average())} m"
+                        "Series completed successfully! ${signalCount} measurements saved."
                     )
                 }
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {
-                    Log.e("AudioDebug", "Failed to save measurement: ${e.message}", e)
-                    onComplete(false, "Failed to save measurement: ${e.message}")
+                    Log.e("AudioDebug", "Failed to save measurements: ${e.message}", e)
+                    onComplete(false, "Failed to save measurements: ${e.message}")
                 }
             }
         }
