@@ -126,21 +126,23 @@ fun HistoryScreen(context: android.content.Context) {
             }
         }
 
-        Button(
-            onClick = {
-                viewModel.deleteMeasurements(selectedMeasurements.toList())
-                selectedMeasurements.clear() // Clear after deletion
-            },
-            enabled = selectedMeasurements.isNotEmpty(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = if (selectedMeasurements.isNotEmpty()) Color.Red else Color.Gray,
-                contentColor = Color.White
-            )
-        ) {
-            Text("Delete Selected (${selectedMeasurements.size})")
+        // Conditionally show the "Delete" button
+        if (selectedMeasurements.isNotEmpty()) {
+            Button(
+                onClick = {
+                    viewModel.deleteMeasurements(selectedMeasurements.toList())
+                    selectedMeasurements.clear() // Clear selected measurements after deletion
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color.Red,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Delete Selected (${selectedMeasurements.size})")
+            }
         }
 
         Row(
@@ -263,7 +265,7 @@ fun MeasurementRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (isSelected) Color.LightGray else Color.Transparent,
+                color = if (isSelected) Color.Gray else Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(vertical = 8.dp)
