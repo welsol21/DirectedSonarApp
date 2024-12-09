@@ -1,6 +1,6 @@
 # Directed Sonar App
 
-**Directed Sonar App** is a state-of-the-art mobile application designed to measure distances using sound waves. This innovative app combines advanced audio processing with an intuitive user interface, offering reliable results and robust functionality.
+**Directed Sonar App** is a mobile application for Android devices designed to measure distances using sound waves. This innovative app combines advanced audio processing with an intuitive user interface, offering reliable results and robust functionality. To ensure accurate measurements, the application requires a functioning speaker and microphone on the device.
 
 ---
 
@@ -73,10 +73,22 @@
 
 ---
 
+## Limitations and Warnings
+
+1. **Device Requirements:**
+   - The app requires a functioning speaker and microphone to perform distance measurements effectively.
+   - Please ensure these components are operational on your device before using the app.
+
+2. **Measurement Range:**
+   - The app has been tested and optimized for distances up to **30 cm**. Beyond this range, results may vary in accuracy due to environmental and hardware factors.
+
+---
+
 ## Installation
 1. Clone the repository:  
    ```bash
    git clone https://github.com/your-repo/directed-sonar-app.git
+   ```
 2. Open the project in Android Studio.
 3. Build and run the application on an emulator or physical device.
 
