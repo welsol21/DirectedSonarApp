@@ -131,7 +131,8 @@ fun GraphScreen() {
                             textColor = Color.GRAY // Серый текст
                             textSize = 12f
                             axisMinimum = 0f // Минимальное значение на оси Y
-                            axisMaximum = (entries.maxOfOrNull { it.y } ?: 0f) + 2f // Увеличьте максимум оси, чтобы включить медиану
+                            granularity = 0.05f // Минимальное значение на оси Y
+                            axisMaximum = ((entries.maxOfOrNull { it.y } ?: 0f) + 0.05f).coerceAtLeast(0.05f) // Увеличьте максимум оси, чтобы включить медиану
 
                             // Добавляем линию ограничений для медианы
                             val medianLimitLine = com.github.mikephil.charting.components.LimitLine(median, "%.2f".format(median)).apply {
