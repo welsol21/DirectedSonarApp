@@ -24,6 +24,9 @@ import kotlin.math.sin
 import kotlinx.coroutines.delay
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Date
 
 class HomeViewModel(application: Application, private val dao: MeasurementDao) : AndroidViewModel(application) {
 
@@ -45,39 +48,48 @@ class HomeViewModel(application: Application, private val dao: MeasurementDao) :
     fun startMeasurement(
         context: Context,
         note: String,
-        duration: Int,
         onProgressUpdate: (Int) -> Unit,
         onComplete: (Boolean, String) -> Unit
     ) {
+        val totalDuration = signalCount * signalDuration // Total duration for the entire series
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val timestamp = System.currentTimeMillis()
-                var distance = 0.0
+                val distances = mutableListOf<Double>() // List to store results of measurements
 
-                // Start the countdown timer and signal playback simultaneously
-                val countdownJob = launch {
-                    repeat(duration) { elapsed ->
-                        onProgressUpdate(duration - elapsed) // Update remaining time
-                        delay(1000) // Wait for 1 second
-                    }
-                    // Final update to set the counter to 0
-                    onProgressUpdate(0)
+                // Format the timestamp as a readable date and time
+                val dateTime = SimpleDateFormat("yy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
+
+                // Generate the note
+                val formattedNote = if (note.isBlank()) {
+                    "${signalCount} x ${signalDuration} c, $sampleRate Hz, $frequency Hz: $dateTime"
+                } else {
+                    "$note: $dateTime"
                 }
 
-                val measurementJob = launch {
-                    distance = measureDistance(context) // Perform the measurement
+                // Start measurements in a loop
+                for (currentSignal in 1..signalCount) {
+                    // Perform a single measurement
+                    val distance = measureDistance(context)
+                    distances.add(distance)
+
+                    // Update the progress bar for the overall series
+                    onProgressUpdate(totalDuration - (signalCount - currentSignal) * signalDuration)
                 }
 
-                // Wait for both jobs to complete
-                countdownJob.join() // Wait for countdown timer to finish
-                measurementJob.join() // Wait for measurement to finish
-
-                // Save the measurement after both processes finish
-                val measurement = Measurement(distance = distance, timestamp = timestamp, note = note)
+                // Save the results
+                val measurement = Measurement(
+                    distance = distances.average(), // Save the average distance
+                    timestamp = timestamp,
+                    note = formattedNote
+                )
                 dao.insert(measurement)
 
                 launch(Dispatchers.Main) {
-                    onComplete(true, "Measurement saved successfully!\nDistance: ${"%.2f".format(distance)} m")
+                    onComplete(
+                        true,
+                        "Measurement saved successfully!\nAverage Distance: ${"%.2f".format(distances.average())} m"
+                    )
                 }
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {

@@ -50,27 +50,9 @@ fun HomeScreen(navController: NavController) {
 
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
-    var messageText by remember { mutableStateOf("") }
     var progress by remember { mutableStateOf(0) }
+    val totalDuration = viewModel.signalCount * viewModel.signalDuration // Total duration for the series
     val scope = rememberCoroutineScope()
-
-    // Request microphone permission
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted ->
-            if (!isGranted) {
-                scope.launch {
-                    messageText = "Microphone permission is required"
-                }
-            }
-        }
-    )
-
-    LaunchedEffect(Unit) {
-        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -84,7 +66,7 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                // App Title
+                // App title
                 Text(
                     text = "Directed Sonar App",
                     style = MaterialTheme.typography.h4.copy(
@@ -100,25 +82,12 @@ fun HomeScreen(navController: NavController) {
             }
 
             item {
-                // Box for Progress Bar or Message
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp), // Reserved height for progress bar or message
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isMeasuring) {
-                        CircularCountdownTimer(
-                            durationInSeconds = 3,
-                            remainingTime = progress
-                        )
-                    } else if (messageText.isNotEmpty()) {
-                        AnimatedMessage(
-                            message = messageText,
-                            visible = true,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
+                // Circular progress bar for countdown
+                if (isMeasuring) {
+                    CircularCountdownTimer(
+                        durationInSeconds = totalDuration,
+                        remainingTime = progress
+                    )
                 }
             }
 
@@ -131,14 +100,13 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Input field for note
+                    // Note input field
                     OutlinedTextField(
                         value = note,
                         onValueChange = { note = it },
                         label = { Text("Enter note (optional)") },
                         placeholder = { Text("E.g., Living room") },
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { /* Handle action */ }),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
@@ -150,20 +118,17 @@ fun HomeScreen(navController: NavController) {
                     AnimatedButton(
                         onClick = {
                             isMeasuring = true
-                            progress = 3 // Initial countdown duration
-
-//                            note =
+                            progress = totalDuration
 
                             viewModel.startMeasurement(
                                 context = context,
                                 note = note,
-                                duration = 3,
                                 onProgressUpdate = { remainingTime ->
                                     progress = remainingTime
                                 },
                                 onComplete = { success, message ->
                                     isMeasuring = false
-                                    messageText = message
+                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                 }
                             )
                         },
@@ -216,7 +181,7 @@ fun CircularCountdownTimer(
             text = "$remainingTime",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = Color.Gray
         )
     }
 }
