@@ -22,8 +22,25 @@ import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlinx.coroutines.delay
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 
-class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
+class HomeViewModel(application: Application, private val dao: MeasurementDao) : AndroidViewModel(application) {
+
+    private val sharedPreferences = application.getSharedPreferences("SettingsPrefs", Context.MODE_PRIVATE)
+
+    // Get settings values from SharedPreferences
+    val signalCount: Int
+        get() = sharedPreferences.getInt("signal_count", 1)
+
+    val signalDuration: Int
+        get() = sharedPreferences.getInt("signal_duration", 3)
+
+    val sampleRate: Int
+        get() = sharedPreferences.getInt("sample_rate", 48000)
+
+    val frequency: Int
+        get() = sharedPreferences.getInt("frequency", 440)
 
     fun startMeasurement(
         context: Context,
@@ -72,9 +89,9 @@ class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
     }
 
     private fun measureDistance(context: Context): Double {
-        val sampleRate = 48000
-        val duration = 3
-        val frequency = 440.0
+        val sampleRate = this.sampleRate
+        val duration = this.signalDuration
+        val frequency = this.frequency.toDouble()
 
         val buffer = ShortArray(sampleRate * duration)
         for (i in buffer.indices) {
@@ -164,21 +181,27 @@ class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
             MediaRecorder.AudioSource.VOICE_RECOGNITION
         }
 
-        val audioRecord = AudioRecord(
-            audioSource,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            minBufferSize
-        )
-
-        if (audioRecord.state != AudioRecord.STATE_INITIALIZED) {
-            Log.e("AudioDebug", "Failed to initialize AudioRecord")
+        if (getApplication<Application>().applicationContext.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            val audioRecord = AudioRecord(
+                audioSource,
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                minBufferSize
+            )
+            if (audioRecord.state == AudioRecord.STATE_INITIALIZED) {
+                Log.d("AudioDebug", "AudioRecord initialized successfully")
+                return audioRecord
+            } else {
+                Log.e("AudioDebug", "Failed to initialize AudioRecord")
+                return null
+            }
+        } else {
+            val context = getApplication<Application>().applicationContext
+            Toast.makeText(context, "Please grant RECORD_AUDIO permission in settings.", Toast.LENGTH_LONG).show()
+            Log.e("AudioDebug", "Permission RECORD_AUDIO not granted")
             return null
         }
-
-        Log.d("AudioDebug", "AudioRecord initialized successfully")
-        return audioRecord
     }
 
     private fun findDelayUsingCrossCorrelation(transmitted: ShortArray, recorded: ShortArray): Int {
@@ -211,11 +234,11 @@ class HomeViewModel(private val dao: MeasurementDao) : ViewModel() {
     }
 }
 
-class HomeViewModelFactory(private val dao: MeasurementDao) : ViewModelProvider.Factory {
+class HomeViewModelFactory(private val application: Application, private val dao: MeasurementDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(dao) as T
+            return HomeViewModel(application, dao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

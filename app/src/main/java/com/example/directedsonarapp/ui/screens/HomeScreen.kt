@@ -35,13 +35,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
+import android.app.Application
 
 @Composable
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
+    val application = context.applicationContext as Application
     val db = DatabaseProvider.getDatabase(context)
     val dao = db.measurementDao()
-    val viewModel: HomeViewModel = viewModel(factory = HomeViewModelFactory(dao))
+
+    val viewModel: HomeViewModel = viewModel(
+        factory = HomeViewModelFactory(application, dao)
+    )
 
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
