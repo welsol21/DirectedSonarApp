@@ -2,7 +2,6 @@ package com.example.directedsonarapp.ui.screens
 
 import android.graphics.Color
 import android.view.ViewGroup
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
@@ -25,7 +24,6 @@ import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.formatter.ValueFormatter
 import java.text.SimpleDateFormat
 import java.util.*
 import android.graphics.Canvas
@@ -41,13 +39,10 @@ fun GraphScreen() {
     val dao = db.measurementDao()
     val viewModel: GraphViewModel = viewModel(factory = GraphViewModelFactory(dao))
 
-    // Состояние для пагинации
     var currentPage by remember { mutableStateOf(0) }
 
-    // Получаем данные измерений
     val measurements = viewModel.measurements.collectAsStateWithLifecycle(initialValue = emptyList())
 
-    // Группируем измерения по Note
     val groupedMeasurements = measurements.value.groupBy { it.note.orEmpty() }
     val pages = groupedMeasurements.keys.toList()
 
@@ -57,14 +52,6 @@ fun GraphScreen() {
             val currentMeasurements = groupedMeasurements[currentKey] ?: emptyList()
             val entries = currentMeasurements.mapIndexed { index, measurement ->
                 BarEntry(index.toFloat(), measurement.distance.toFloat()) // Преобразование Double в Float
-            }
-
-            // Рассчитываем медиану
-            val median = currentMeasurements.map { it.distance.toFloat() }.sorted().let { sortedList ->
-                if (sortedList.isEmpty()) 0f
-                else if (sortedList.size % 2 == 0) {
-                    (sortedList[sortedList.size / 2 - 1] + sortedList[sortedList.size / 2]) / 2
-                } else sortedList[sortedList.size / 2]
             }
 
             AndroidView(
@@ -81,19 +68,17 @@ fun GraphScreen() {
                 },
                 update = { chart ->
                     if (entries.isNotEmpty()) {
-                        val dataSet = BarDataSet(entries, "Measurements for $currentKey").apply {
+                        val dataSet = BarDataSet(entries, "$currentKey").apply {
                             color = Color.BLUE
-                            valueTextColor = Color.TRANSPARENT // Скрываем текст значений
-                            valueTextSize = 0f // Обнуляем размер текста значений
+                            valueTextColor = Color.TRANSPARENT
+                            valueTextSize = 0f
                         }
 
                         val barData = BarData(dataSet)
                         chart.data = barData
 
-                        // Удаление старых лимитных линий
                         chart.axisLeft.removeAllLimitLines()
 
-                        // Рассчитываем медиану
                         val median = currentMeasurements.map { it.distance.toFloat() }.sorted().let { sortedList ->
                             if (sortedList.isEmpty()) 0f
                             else if (sortedList.size % 2 == 0) {
@@ -101,21 +86,19 @@ fun GraphScreen() {
                             } else sortedList[sortedList.size / 2]
                         }
 
-                        // Добавляем линию медианы
                         chart.axisLeft.addLimitLine(
                             com.github.mikephil.charting.components.LimitLine(median, "Median: %.2f".format(median)).apply {
                                 lineColor = Color.RED
                                 lineWidth = 5f
                                 typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD) // Жирный текст
-                                textColor = Color.RED // Цвет текста медианы
+                                textColor = Color.RED
                                 textSize = 16f
                                 enableDashedLine(10f, 15f, 0f)
                             }
                         )
 
-                        // Настраиваем ось X
                         chart.xAxis.apply {
-                            textColor = Color.GRAY // Серый текст
+                            textColor = Color.GRAY
                             textSize = 12f
                             setDrawGridLines(false)
                             position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
@@ -126,45 +109,54 @@ fun GraphScreen() {
                             )
                         }
 
-                        // Настраиваем ось Y
                         chart.axisLeft.apply {
-                            textColor = Color.GRAY // Серый текст
+                            textColor = Color.GRAY
                             textSize = 12f
-                            axisMinimum = 0f // Минимальное значение на оси Y
-                            granularity = 0.05f // Минимальное значение на оси Y
-                            axisMaximum = ((entries.maxOfOrNull { it.y } ?: 0f) + 0.05f).coerceAtLeast(0.05f) // Увеличьте максимум оси, чтобы включить медиану
+                            axisMinimum = 0f
+                            granularity = 0.05f
+                            axisMaximum = ((entries.maxOfOrNull { it.y } ?: 0f) + 0.05f).coerceAtLeast(0.05f)
 
-                            // Добавляем линию ограничений для медианы
                             val medianLimitLine = com.github.mikephil.charting.components.LimitLine(median, "%.2f".format(median)).apply {
-                                lineColor = Color.TRANSPARENT // Цвет линии
-                                lineWidth = 2f // Толщина линии
-                                labelPosition = com.github.mikephil.charting.components.LimitLine.LimitLabelPosition.LEFT_TOP // Положение текста
-                                textSize = 16f // Размер текста
-                                textColor = Color.RED // Цвет текста
+                                lineColor = Color.TRANSPARENT
+                                lineWidth = 2f
+                                labelPosition = com.github.mikephil.charting.components.LimitLine.LimitLabelPosition.LEFT_TOP
+                                textSize = 16f
+                                textColor = Color.RED
                             }
-                            addLimitLine(medianLimitLine) // Добавляем линию на ось Y
+                            addLimitLine(medianLimitLine)
                         }
 
-                        chart.axisRight.isEnabled = false // Отключаем правую ось
+                        chart.axisRight.isEnabled = false
 
-                        // Отключение описания графика
                         chart.description.isEnabled = false
 
-                        // Цвет легенды
-                        chart.legend.textColor = Color.GRAY // Серый текст легенды
+                        chart.legend.apply {
+                            isEnabled = true
+                            verticalAlignment = com.github.mikephil.charting.components.Legend.LegendVerticalAlignment.TOP
+                            horizontalAlignment = com.github.mikephil.charting.components.Legend.LegendHorizontalAlignment.CENTER
+                            orientation = com.github.mikephil.charting.components.Legend.LegendOrientation.HORIZONTAL
+                            textSize = 16f
+                            textColor = Color.BLUE
+                            xEntrySpace = 8f
+                            yEntrySpace = 8f
+                            form = com.github.mikephil.charting.components.Legend.LegendForm.CIRCLE
+                            formSize = 10f
+                            formToTextSpace = 8f
+                            direction = com.github.mikephil.charting.components.Legend.LegendDirection.LEFT_TO_RIGHT
 
-                        // Обновляем график
+                            chart.setExtraOffsets(16f, 0f, 16f, 0f)
+                        }
+
                         chart.invalidate()
                     } else {
                         chart.clear()
                         chart.setNoDataText("No data available")
-                        chart.setNoDataTextColor(Color.GRAY) // Серый текст "No data available"
+                        chart.setNoDataTextColor(Color.GRAY)
                     }
                 }
             )
         }
 
-        // Пагинация
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -216,49 +208,5 @@ fun PaginationButton(
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
             )
         )
-    }
-}
-
-class CustomBarChartRenderer(
-    chart: BarChart,
-    animator: ChartAnimator,
-    viewPortHandler: ViewPortHandler,
-    private val dataSet: BarDataSet
-) : BarChartRenderer(chart, animator, viewPortHandler) {
-
-    private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.WHITE // Цвет текста
-        textSize = 40f // Размер текста
-        textAlign = Paint.Align.CENTER
-    }
-
-    private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.BLUE // Цвет фона (круг)
-    }
-
-    override fun drawValues(c: Canvas?) {
-        if (c == null) return
-
-        val barBuffer = mBarBuffers[0] // Получение первого BarBuffer
-        val phaseY = mAnimator.phaseY
-
-        for (i in 0 until dataSet.entryCount) {
-            val entry = dataSet.getEntryForIndex(i) as? BarEntry ?: continue
-
-            val x = barBuffer.buffer[i * 4] + barBuffer.buffer[i * 4 + 2] / 2
-            val y = entry.y * phaseY
-            val pos = mViewPortHandler.contentTop() + y
-
-            // Рисуем круг под текст
-            c.drawCircle(x, pos - 40f, 35f, backgroundPaint)
-
-            // Рисуем значение
-            c.drawText(
-                "%.1f".format(entry.y),
-                x,
-                pos - 40f,
-                valuePaint
-            )
-        }
     }
 }
