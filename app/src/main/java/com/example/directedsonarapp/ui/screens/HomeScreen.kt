@@ -1,25 +1,18 @@
 package com.example.directedsonarapp.ui.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,7 +27,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
-import kotlinx.coroutines.launch
 import android.app.Application
 import androidx.compose.runtime.saveable.rememberSaveable
 
@@ -242,43 +234,3 @@ fun AnimatedButton(
         )
     }
 }
-
-@Composable
-fun AnimatedMessage(
-    message: String,
-    modifier: Modifier = Modifier,
-    visible: Boolean
-) {
-    val alpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 300)
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (visible) 1f else 0.8f,
-        animationSpec = tween(durationMillis = 300)
-    )
-
-    if (visible) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = modifier
-                .scale(scale)
-                .alpha(alpha)
-                .padding(8.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF3700B3))
-                .padding(16.dp)
-        ) {
-            Text(
-                text = message,
-                color = Color.White,
-                style = MaterialTheme.typography.body1.copy(
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-            )
-        }
-    }
-}
-

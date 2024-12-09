@@ -26,11 +26,6 @@ import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import java.text.SimpleDateFormat
 import java.util.*
-import android.graphics.Canvas
-import android.graphics.Paint
-import com.github.mikephil.charting.renderer.BarChartRenderer
-import com.github.mikephil.charting.animation.ChartAnimator
-import com.github.mikephil.charting.utils.ViewPortHandler
 
 @Composable
 fun GraphScreen() {

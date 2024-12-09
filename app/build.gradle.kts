@@ -78,7 +78,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
     implementation("androidx.compose.material:material-icons-core:1.5.1")
     implementation("androidx.compose.material:material-icons-extended:1.5.1")
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("androidx.compose.runtime:runtime-livedata:1.5.1")
 
 
     // Jetpack Compose

@@ -8,8 +8,6 @@ import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
-import android.media.audiofx.AcousticEchoCanceler
-import android.media.audiofx.NoiseSuppressor
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
@@ -21,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
-import kotlinx.coroutines.delay
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import java.text.SimpleDateFormat
@@ -58,7 +55,6 @@ class HomeViewModel(application: Application, private val dao: MeasurementDao) :
                 val timestamp = System.currentTimeMillis()
                 val dateTime = SimpleDateFormat("yy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
 
-                // Заметка для всей серии измерений
                 val formattedNote = if (note.isBlank()) {
                     "${signalCount} x ${signalDuration} c, $sampleRate Hz, $frequency Hz: $dateTime"
                 } else {
@@ -66,22 +62,18 @@ class HomeViewModel(application: Application, private val dao: MeasurementDao) :
                 }
 
                 for (currentSignal in 1..signalCount) {
-                    // Выполняем замер
                     val distance = measureDistance(context)
 
-                    // Сохраняем результат замера в базу данных
                     val measurement = Measurement(
                         distance = distance,
-                        timestamp = System.currentTimeMillis(), // Уникальный временной штамп для каждого замера
-                        note = formattedNote // Одинаковая заметка для всех замеров в серии
+                        timestamp = System.currentTimeMillis(),
+                        note = formattedNote
                     )
-                    dao.insert(measurement) // Сохраняем замер
+                    dao.insert(measurement)
 
-                    // Обновляем UI с результатом текущего сигнала
                     val message = "Signal $currentSignal: ${"%.2f".format(distance)} m"
                     onSignalComplete(message)
 
-                    // Обновляем прогресс-бар
                     onProgressUpdate(totalDuration - currentSignal * signalDuration)
                 }
 
