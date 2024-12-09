@@ -121,7 +121,7 @@ fun GraphScreen() {
                             position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
                             valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(
                                 currentMeasurements.map {
-                                    SimpleDateFormat("dd.MM HH:mm", Locale.getDefault()).format(Date(it.timestamp))
+                                    SimpleDateFormat("mm:ss", Locale.getDefault()).format(Date(it.timestamp))
                                 }
                             )
                         }
