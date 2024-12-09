@@ -51,114 +51,120 @@ fun HomeScreen(navController: NavController) {
     var note by remember { mutableStateOf("") }
     var isMeasuring by remember { mutableStateOf(false) }
     var progress by remember { mutableStateOf(0) }
-    val totalDuration = viewModel.signalCount * viewModel.signalDuration // Total duration for the series
+    var messages by remember { mutableStateOf("") } // Single string for displaying results
+    val totalDuration = viewModel.signalCount * viewModel.signalDuration
     val scope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = { Spacer(modifier = Modifier.height(56.dp)) }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                // App title
-                Text(
-                    text = "Directed Sonar App",
-                    style = MaterialTheme.typography.h4.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = MaterialTheme.colors.primary
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                )
-            }
+            // App title
+            Text(
+                text = "Directed Sonar App",
+                style = MaterialTheme.typography.h4.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp,
+                    color = MaterialTheme.colors.primary
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            )
 
-            item {
-                // Circular progress bar for countdown
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Box for Progress Bar or Messages
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp), // Reserved height for progress bar or messages
+                contentAlignment = Alignment.Center
+            ) {
                 if (isMeasuring) {
                     CircularCountdownTimer(
                         durationInSeconds = totalDuration,
                         remainingTime = progress
                     )
+                } else if (messages.isNotEmpty()) {
+                    Text(
+                        text = messages,
+                        style = MaterialTheme.typography.body1.copy(
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colors.onSurface
+                        ),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            item {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Note input field
-                    OutlinedTextField(
-                        value = note,
-                        onValueChange = { note = it },
-                        label = { Text("Enter note (optional)") },
-                        placeholder = { Text("E.g., Living room") },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                    )
+            // Input field for Note
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Enter note (optional)") },
+                placeholder = { Text("E.g., Living room") },
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                    // Start measurement button
-                    AnimatedButton(
-                        onClick = {
-                            isMeasuring = true
-                            progress = totalDuration
+            // Start measurement button
+            AnimatedButton(
+                onClick = {
+                    isMeasuring = true
+                    progress = totalDuration
+                    messages = "" // Clear previous messages
 
-                            viewModel.startMeasurement(
-                                context = context,
-                                note = note,
-                                onProgressUpdate = { remainingTime ->
-                                    progress = remainingTime
-                                },
-                                onComplete = { success, message ->
-                                    isMeasuring = false
-                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                                }
-                            )
+                    viewModel.startMeasurement(
+                        context = context,
+                        note = note,
+                        onProgressUpdate = { remainingTime ->
+                            progress = remainingTime
                         },
-                        enabled = !isMeasuring,
-                        text = if (isMeasuring) "Measuring..." else "Start Measurement",
-                        modifier = Modifier
-                            .fillMaxWidth(0.65f)
-                            .height(56.dp)
+                        onSignalComplete = { message ->
+                            messages += "$message\n" // Append new message
+                        },
+                        onComplete = { success, message ->
+                            isMeasuring = false
+                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        }
                     )
-                }
-            }
+                },
+                enabled = !isMeasuring,
+                text = if (isMeasuring) "Measuring..." else "Start Measurement",
+                modifier = Modifier
+                    .fillMaxWidth(0.65f)
+                    .height(56.dp)
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            item {
-                // Footer text
-                Text(
-                    text = "Measure distances with sound waves",
-                    style = MaterialTheme.typography.body2.copy(
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
+            // Footer text
+            Text(
+                text = "Measure distances with sound waves",
+                style = MaterialTheme.typography.body2.copy(
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                ),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
         }
     }
 }
@@ -174,14 +180,14 @@ fun CircularCountdownTimer(
         CircularProgressIndicator(
             progress = progress,
             strokeWidth = 4.dp,
-            color = Color(0xFF6200EE),
+            color = MaterialTheme.colors.primary,
             modifier = Modifier.fillMaxSize()
         )
         Text(
             text = "$remainingTime",
-            fontSize = 14.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Gray
+            color = MaterialTheme.colors.primary
         )
     }
 }

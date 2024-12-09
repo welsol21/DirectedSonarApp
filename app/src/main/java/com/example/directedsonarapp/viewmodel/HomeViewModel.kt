@@ -49,37 +49,31 @@ class HomeViewModel(application: Application, private val dao: MeasurementDao) :
         context: Context,
         note: String,
         onProgressUpdate: (Int) -> Unit,
+        onSignalComplete: (String) -> Unit,
         onComplete: (Boolean, String) -> Unit
     ) {
-        val totalDuration = signalCount * signalDuration // Total duration for the entire series
+        val totalDuration = signalCount * signalDuration
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val timestamp = System.currentTimeMillis()
-                val distances = mutableListOf<Double>() // List to store results of measurements
-
-                // Format the timestamp as a readable date and time
+                val distances = mutableListOf<Double>()
                 val dateTime = SimpleDateFormat("yy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
-
-                // Generate the note
                 val formattedNote = if (note.isBlank()) {
                     "${signalCount} x ${signalDuration} c, $sampleRate Hz, $frequency Hz: $dateTime"
                 } else {
                     "$note: $dateTime"
                 }
 
-                // Start measurements in a loop
                 for (currentSignal in 1..signalCount) {
-                    // Perform a single measurement
                     val distance = measureDistance(context)
                     distances.add(distance)
-
-                    // Update the progress bar for the overall series
-                    onProgressUpdate(totalDuration - (signalCount - currentSignal) * signalDuration)
+                    val message = "Signal $currentSignal: ${"%.2f".format(distance)} m"
+                    onSignalComplete(message)
+                    onProgressUpdate(totalDuration - currentSignal * signalDuration)
                 }
 
-                // Save the results
                 val measurement = Measurement(
-                    distance = distances.average(), // Save the average distance
+                    distance = distances.average(),
                     timestamp = timestamp,
                     note = formattedNote
                 )
