@@ -27,6 +27,12 @@ class HistoryViewModel(private val dao: MeasurementDao) : ViewModel() {
             println("Updated measurement: $updatedMeasurement")
         }
     }
+
+    fun deleteMeasurements(measurements: List<Measurement>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.deleteMeasurements(measurements)
+        }
+    }
 }
 
 class HistoryViewModelFactory(private val dao: MeasurementDao) : ViewModelProvider.Factory {

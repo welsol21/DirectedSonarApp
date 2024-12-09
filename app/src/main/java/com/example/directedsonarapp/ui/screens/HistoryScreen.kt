@@ -2,6 +2,7 @@ package com.example.directedsonarapp.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -42,6 +43,9 @@ fun HistoryScreen(context: android.content.Context) {
     var sortField by remember { mutableStateOf("timestamp") }
     var ascending by remember { mutableStateOf(false) }
     var isFiltering by remember { mutableStateOf(false) }
+
+    // State to store selected measurements for bulk operations
+    val selectedMeasurements = remember { mutableStateListOf<Measurement>() }
 
     val filteredMeasurements = remember(measurements, filterText) {
         if (filterText.isEmpty()) {
@@ -115,10 +119,28 @@ fun HistoryScreen(context: android.content.Context) {
             itemsIndexed(currentItems) { _, measurement ->
                 MeasurementRow(
                     measurement = measurement,
+                    selectedMeasurements = selectedMeasurements,
                     onUpdateNote = { newNote -> viewModel.updateMeasurementNote(measurement, newNote) }
                 )
                 Divider()
             }
+        }
+
+        Button(
+            onClick = {
+                viewModel.deleteMeasurements(selectedMeasurements.toList())
+                selectedMeasurements.clear() // Clear after deletion
+            },
+            enabled = selectedMeasurements.isNotEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = if (selectedMeasurements.isNotEmpty()) Color.Red else Color.Gray,
+                contentColor = Color.White
+            )
+        ) {
+            Text("Delete Selected (${selectedMeasurements.size})")
         }
 
         Row(
@@ -228,16 +250,30 @@ fun NoteHeader(
 @Composable
 fun MeasurementRow(
     measurement: Measurement,
+    selectedMeasurements: MutableList<Measurement>,
     onUpdateNote: (String) -> Unit
 ) {
     val dateTime = Date(measurement.timestamp)
     val dateFormat = SimpleDateFormat("dd.MM.yy")
     val timeFormat = SimpleDateFormat("HH:mm:ss")
 
+    val isSelected = selectedMeasurements.contains(measurement)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .background(
+                color = if (isSelected) Color.LightGray else Color.Transparent,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(vertical = 8.dp)
+            .clickable {
+                if (isSelected) {
+                    selectedMeasurements.remove(measurement) // Unselect
+                } else {
+                    selectedMeasurements.add(measurement) // Select
+                }
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
